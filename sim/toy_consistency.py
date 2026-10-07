@@ -29,7 +29,7 @@ def weak_subspace(Nm):
     Ud = V[:, lam/lam[-1] < tau]; S = np.cbrt(max(np.prod(lam),0))/(lam.sum()/3)
     return Ud, S, H
 
-def run(method, n_win=400, s_amb_model=s_amb_true, radar_noise_mult=1.0, outlier_frac=0.0, rho=0.8, sigL_assumed=None, sigD_assumed=None):
+def run(method, n_win=400, s_amb_model=s_amb_true, s_amb_gen=s_amb_true, radar_noise_mult=1.0, outlier_frac=0.0, rho=0.8, sigL_assumed=None, sigD_assumed=None):
     v_true = np.array([1.0, 0, 0]); v_hat = v_true.copy(); P = np.eye(3)*0.01
     pos_err = 0.0; e_list=[]; nees=[]; dnees=[]
     for k in range(n_win):
@@ -40,7 +40,7 @@ def run(method, n_win=400, s_amb_model=s_amb_true, radar_noise_mult=1.0, outlier
         Ud, S, H = weak_subspace(Nm)
         # LiDAR: measures n^T (v T + shift) ; correlated shift along x
         v_pred = v_hat.copy()
-        shift = (rho*(v_pred-v_true)[0]*T + s_amb_true*rng.normal())*np.array([1,0,0])  # ICP sticks to prediction along corridor
+        shift = (rho*(v_pred-v_true)[0]*T + s_amb_gen*rng.normal())*np.array([1,0,0])  # ICP sticks to prediction along corridor
         zL = Nm @ (v_true*T + shift) + sig_L*rng.normal(size=len(Nm))
         # Radar: Doppler on LOS, true noise may be larger than assumed
         zD = L @ v_true + sig_D*radar_noise_mult*rng.normal(size=len(L))

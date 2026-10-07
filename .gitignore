@@ -1,0 +1,13 @@
+data/
+results/*
+!results/summaries/
+ws/build/
+ws/install/
+ws/log/
+**/thirdparty/ctraj-build/
+**/thirdparty/ctraj-install/
+__pycache__/
+.venv/
+*.bag
+*.db3
+*.mcap
