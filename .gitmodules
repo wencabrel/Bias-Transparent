@@ -1,0 +1,3 @@
+[submodule "ws/src/TRaIL-Odom"]
+	path = ws/src/TRaIL-Odom
+	url = https://github.com/ChiyunNoh/TRaIL-Odom.git
