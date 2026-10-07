@@ -1,0 +1,55 @@
+18 total jobs
+[1/18] RUN  V4 Airfield1 rep1
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/Airfield1/rep1
+[1/18] OK   V4 Airfield1 rep1
+[2/18] RUN  V4 Airfield1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/Airfield1/rep2
+[2/18] OK   V4 Airfield1 rep2
+[3/18] RUN  V4 Airfield1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/Airfield1/rep3
+[3/18] OK   V4 Airfield1 rep3
+[4/18] RUN  V4 Airfield2 rep1
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/Airfield2/rep1
+[4/18] OK   V4 Airfield2 rep1
+[5/18] RUN  V4 Airfield2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/Airfield2/rep2
+[5/18] OK   V4 Airfield2 rep2
+[6/18] RUN  V4 Airfield2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/Airfield2/rep3
+[6/18] OK   V4 Airfield2 rep3
+[7/18] RUN  V4 BikeTunnel1 rep1
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/BikeTunnel1/rep1
+[7/18] OK   V4 BikeTunnel1 rep1
+[8/18] RUN  V4 BikeTunnel1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/BikeTunnel1/rep2
+[8/18] OK   V4 BikeTunnel1 rep2
+[9/18] RUN  V4 BikeTunnel1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/BikeTunnel1/rep3
+[9/18] OK   V4 BikeTunnel1 rep3
+[10/18] RUN  V4 BikeTunnel2 rep1
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/BikeTunnel2/rep1
+[10/18] OK   V4 BikeTunnel2 rep1
+[11/18] RUN  V4 BikeTunnel2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/BikeTunnel2/rep2
+[11/18] OK   V4 BikeTunnel2 rep2
+[12/18] RUN  V4 BikeTunnel2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/BikeTunnel2/rep3
+[12/18] OK   V4 BikeTunnel2 rep3
+[13/18] SKIP V4 Park1 rep1 (already done)
+[14/18] RUN  V4 Park1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/Park1/rep2
+[14/18] OK   V4 Park1 rep2
+[15/18] RUN  V4 Park1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/Park1/rep3
+[15/18] OK   V4 Park1 rep3
+[16/18] RUN  V4 Park2 rep1
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/Park2/rep1
+[16/18] OK   V4 Park2 rep1
+[17/18] RUN  V4 Park2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/Park2/rep2
+[17/18] OK   V4 Park2 rep2
+[18/18] RUN  V4 Park2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V4/Park2/rep3
+[18/18] OK   V4 Park2 rep3
+
+done: 18/18 succeeded

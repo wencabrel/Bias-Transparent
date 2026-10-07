@@ -56,10 +56,10 @@ ros2 run rmw_zenoh_cpp rmw_zenohd &
 ZENOHD_PID=$!
 sleep 3
 
-timeout 700 ros2 launch /root/project/scripts/launch/trail_boxi_headless.launch.py \
+timeout 900 ros2 launch /root/project/scripts/launch/trail_boxi_headless.launch.py \
     config_path:='"$OUT_DIR_CONTAINER"'/config.yaml \
     rosbag_path:=/root/project/data/Boxi_ros2_sqlite/'"$SEQUENCE"' \
-    start_time:=20 grace_period:=15
+    start_time:=20 grace_period:=120
 EXIT=$?
 kill $ZENOHD_PID 2>/dev/null || true
 exit $EXIT
@@ -72,20 +72,63 @@ RESEARCH_COMMIT="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 SUBMODULE_COMMIT="$(git -C "$REPO_ROOT/ws/src/TRaIL-Odom" rev-parse HEAD)"
 CONFIG_SHA256="$(sha256sum "$CFG_PATH" | cut -d' ' -f1)"
 
+# Part I validation: exit 0 from `ros2 launch` does NOT mean trail_node reached Save() --
+# it can be SIGKILLed after failing to respond to SIGINT/SIGTERM (seen on BikeTunnel2: stuck
+# mid-Solve() in a near-degenerate corridor segment, falling behind real-time, never caught
+# up within the shutdown grace period) and `ros2 launch` still reports success. Verify the
+# actual output instead of trusting the exit code.
+VALIDATION="$(python3 -c "
+import json, sys
+poses_path = '$OUT_DIR/trail_output/poses.txt'
+errors = []
+try:
+    with open(poses_path) as f:
+        lines = [l for l in f if l.strip()]
+except OSError as e:
+    print(json.dumps({'ok': False, 'errors': [f'cannot open poses.txt: {e}']}))
+    sys.exit()
+
+if len(lines) == 0:
+    errors.append('poses.txt is empty')
+else:
+    prev_t = None
+    for i, line in enumerate(lines):
+        parts = line.split()
+        if len(parts) != 8:
+            errors.append(f'line {i}: expected 8 fields, got {len(parts)}')
+            break
+        vals = [float(x) for x in parts]
+        if any(v != v or abs(v) == float('inf') for v in vals):  # NaN or Inf
+            errors.append(f'line {i}: NaN/Inf value')
+            break
+        if prev_t is not None and vals[0] <= prev_t:
+            errors.append(f'line {i}: non-monotonic timestamp')
+            break
+        prev_t = vals[0]
+print(json.dumps({'ok': len(errors) == 0, 'errors': errors, 'n_poses': len(lines)}))
+")"
+
 python3 -c "
 import json, sys
+validation = json.loads('''$VALIDATION''')
+exit_code = $RUN_EXIT if validation['ok'] else 1
 json.dump(dict(
     variant='$VARIANT', sequence='$SEQUENCE', rep=$REP,
     research_commit='$RESEARCH_COMMIT', trail_odom_commit='$SUBMODULE_COMMIT',
     config_sha256='$CONFIG_SHA256',
     flags=dict(), command=sys.argv[1],
     start_time='$START_TS', end_time='$END_TS', host='$(hostname)',
-    exit_code=$RUN_EXIT,
+    exit_code=exit_code, launch_exit_code=$RUN_EXIT, validation=validation,
 ), open('$OUT_DIR/run.json', 'w'), indent=2)
 " "$0 $*"
 
+VALIDATION_OK="$(python3 -c "import json; print(json.loads('''$VALIDATION''')['ok'])")"
 if [ "$RUN_EXIT" -ne 0 ]; then
-    echo "run FAILED (exit $RUN_EXIT) -- see $OUT_DIR/run.log" >&2
+    echo "run FAILED (launch exit $RUN_EXIT) -- see $OUT_DIR/run.log" >&2
     exit "$RUN_EXIT"
+fi
+if [ "$VALIDATION_OK" != "True" ]; then
+    echo "run FAILED validation: $VALIDATION -- see $OUT_DIR/run.log" >&2
+    exit 1
 fi
 echo "run OK -> $OUT_DIR"
