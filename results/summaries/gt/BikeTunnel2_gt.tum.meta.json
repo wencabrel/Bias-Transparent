@@ -1,0 +1,18 @@
+{
+  "source_bag": "data/Boxi/BikeTunnel2/2026-02-06-12-22-39_jetson_ap20_robot.bag",
+  "n_poses": 3684,
+  "t_start": 1770376989.2616403,
+  "t_end": 1770377196.22181,
+  "lever_arm_note": "prism_in_body is box_base->prism translation/rotation; NOT applied to GT below -- see module docstring",
+  "prism_in_body": [
+    0.3088378015503127,
+    -0.038312997211241984,
+    -0.2349441159711169
+  ],
+  "prism_rotation_xyzw": [
+    -0.005724388155828644,
+    -0.0013879431347362404,
+    -0.004742721620119043,
+    0.9999714053840392
+  ]
+}
