@@ -54,7 +54,14 @@ def main():
 
     eval_dir = REPO_ROOT / 'results' / 'summaries' / 'eval'
     eval_dir.mkdir(parents=True, exist_ok=True)
-    rows = []
+
+    csv_path = REPO_ROOT / 'results' / 'summaries' / 'eval_traj.csv'
+    existing = {}
+    if csv_path.exists():
+        with open(csv_path, newline='') as f:
+            for row in csv.DictReader(f):
+                existing[(row['variant'], row['sequence'], int(row['rep']))] = row
+    rows_by_key = dict(existing)
 
     for variant in args.variants:
         for sequence in args.sequences:
@@ -79,22 +86,27 @@ def main():
 
                 ape_stats = read_stats(ape_zip)
                 rpe_stats = read_stats(rpe_zip)
-                rows.append(dict(
+                rows_by_key[(variant, sequence, rep)] = dict(
                     variant=variant, sequence=sequence, rep=rep,
                     ate_rmse=ape_stats['rmse'], ate_mean=ape_stats['mean'],
                     ate_std=ape_stats['std'], ate_max=ape_stats['max'],
                     rte_rmse=rpe_stats['rmse'], rte_mean=rpe_stats['mean'],
                     rte_std=rpe_stats['std'], rte_max=rpe_stats['max'],
-                ))
+                )
                 print(f"{variant} {sequence} rep{rep}: ATE rmse={ape_stats['rmse']:.4f} "
                       f"RTE rmse={rpe_stats['rmse']:.4f}")
 
-    csv_path = REPO_ROOT / 'results' / 'summaries' / 'eval_traj.csv'
+    # Merge into existing rows rather than overwrite -- a narrower --sequences/--reps
+    # invocation must not silently drop rows for sequences/reps it wasn't asked about.
+    fieldnames = ['variant', 'sequence', 'rep', 'ate_rmse', 'ate_mean', 'ate_std', 'ate_max',
+                  'rte_rmse', 'rte_mean', 'rte_std', 'rte_max']
+    sorted_keys = sorted(rows_by_key.keys(), key=lambda k: (k[0], k[1], k[2]))
     with open(csv_path, 'w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()) if rows else [])
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(rows)
-    print(f"\nwrote {csv_path}")
+        for key in sorted_keys:
+            writer.writerow(rows_by_key[key])
+    print(f"\nwrote {csv_path} ({len(sorted_keys)} rows)")
 
 
 if __name__ == '__main__':
