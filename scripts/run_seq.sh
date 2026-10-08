@@ -2,7 +2,7 @@
 # Run TRaIL-Odom on one Boxi sequence, inside chiyunnn/trail-odom:latest.
 #
 # Usage: scripts/run_seq.sh <variant> <sequence> <rep>
-#   variant  : V4 (upstream defaults; the only variant implemented so far -- Phase 0/H0)
+#   variant  : V4 (upstream defaults) | V0,V1,V2,V3,V5,V6,V7 (Phase 2 ablation, Part D.1/H)
 #   sequence : Airfield1 | Airfield2 | BikeTunnel1 | BikeTunnel2 | Park1 | Park2
 #   rep      : repetition number, e.g. 1, 2, 3
 #
@@ -18,9 +18,38 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 case "$VARIANT" in
-    V4) BASE_CFG="$REPO_ROOT/configs/base/boxi.yaml" ;;
-    *) echo "unknown variant '$VARIANT' (only V4 is implemented so far)" >&2; exit 1 ;;
+    V4|V0|V1|V2|V3|V5|V6|V7) BASE_CFG="$REPO_ROOT/configs/base/boxi.yaml" ;;
+    *) echo "unknown variant '$VARIANT' (expected one of V0,V1,V2,V3,V4,V5,V6,V7)" >&2; exit 1 ;;
 esac
+
+# Phase 2 ablation mapping (Part D.1/H Phase 2). V4 (upstream) leaves every
+# TRAIL_RESEARCH_ABLATION_* variable unset, so AblationConfig's defaults (all on,
+# kappa_thresh=5, eta=2.2) apply -- i.e. V4 is exactly upstream behaviour, unchanged.
+declare -a ABLATION_ENV=()
+case "$VARIANT" in
+    V4) ;;  # all defaults (upstream)
+    V0) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ALPHA=0 TRAIL_RESEARCH_ABLATION_GAMMA=0
+                       TRAIL_RESEARCH_ABLATION_PROX=0 TRAIL_RESEARCH_ABLATION_ZEROVEL=0) ;;
+    V1) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ALPHA=0 TRAIL_RESEARCH_ABLATION_GAMMA=0
+                       TRAIL_RESEARCH_ABLATION_ZEROVEL=0) ;;  # prox only
+    V2) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_GAMMA=0 TRAIL_RESEARCH_ABLATION_PROX=0
+                       TRAIL_RESEARCH_ABLATION_ZEROVEL=0) ;;  # alpha only
+    V3) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ALPHA=0 TRAIL_RESEARCH_ABLATION_PROX=0
+                       TRAIL_RESEARCH_ABLATION_ZEROVEL=0) ;;  # gamma only
+    V5) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX=0) ;;  # V4 without prox
+    V6) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_KAPPA_THRESH=30 TRAIL_RESEARCH_ABLATION_ETA=2.0) ;;  # paper settings
+    V7) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ZEROVEL=0) ;;  # no x10 zero-vel boost
+esac
+ABLATION_EXPORTS=""
+FLAGS_JSON="{"
+for kv in "${ABLATION_ENV[@]}"; do
+    ABLATION_EXPORTS="${ABLATION_EXPORTS}export ${kv}
+"
+    key="${kv%%=*}"; val="${kv#*=}"
+    FLAGS_JSON="${FLAGS_JSON}\"${key}\":\"${val}\","
+done
+FLAGS_JSON="${FLAGS_JSON}}"
+FLAGS_JSON="$(echo "$FLAGS_JSON" | sed 's/,}/}/')"
 
 BAG_DIR="$REPO_ROOT/data/Boxi_ros2_sqlite/$SEQUENCE"
 if [ ! -d "$BAG_DIR" ]; then
@@ -51,7 +80,7 @@ set -eo pipefail
 source /opt/ros/humble/setup.bash
 source /root/project/ws/install/setup.bash
 export RMW_IMPLEMENTATION=rmw_zenoh_cpp
-
+'"$ABLATION_EXPORTS"'
 ros2 run rmw_zenoh_cpp rmw_zenohd &
 ZENOHD_PID=$!
 sleep 3
@@ -116,7 +145,7 @@ json.dump(dict(
     variant='$VARIANT', sequence='$SEQUENCE', rep=$REP,
     research_commit='$RESEARCH_COMMIT', trail_odom_commit='$SUBMODULE_COMMIT',
     config_sha256='$CONFIG_SHA256',
-    flags=dict(), command=sys.argv[1],
+    flags=json.loads('''$FLAGS_JSON'''), command=sys.argv[1],
     start_time='$START_TS', end_time='$END_TS', host='$(hostname)',
     exit_code=exit_code, launch_exit_code=$RUN_EXIT, validation=validation,
 ), open('$OUT_DIR/run.json', 'w'), indent=2)
