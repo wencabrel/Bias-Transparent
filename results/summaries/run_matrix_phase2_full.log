@@ -1,0 +1,470 @@
+105 total jobs
+[1/105] SKIP V0 Airfield1 rep1 (already done)
+[2/105] RUN  V0 Airfield1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V0/Airfield1/rep2
+[2/105] OK   V0 Airfield1 rep2
+[3/105] RUN  V0 Airfield1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V0/Airfield1/rep3
+[3/105] OK   V0 Airfield1 rep3
+[4/105] SKIP V0 Airfield2 rep1 (already done)
+[5/105] RUN  V0 Airfield2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V0/Airfield2/rep2
+[5/105] OK   V0 Airfield2 rep2
+[6/105] RUN  V0 Airfield2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V0/Airfield2/rep3
+[6/105] OK   V0 Airfield2 rep3
+[7/105] SKIP V0 BikeTunnel1 rep1 (already done)
+[8/105] RUN  V0 BikeTunnel1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V0/BikeTunnel1/rep2
+[8/105] OK   V0 BikeTunnel1 rep2
+[9/105] RUN  V0 BikeTunnel1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V0/BikeTunnel1/rep3
+[9/105] OK   V0 BikeTunnel1 rep3
+[10/105] SKIP V0 Park1 rep1 (already done)
+[11/105] RUN  V0 Park1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V0/Park1/rep2
+[11/105] OK   V0 Park1 rep2
+[12/105] RUN  V0 Park1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V0/Park1/rep3
+[12/105] OK   V0 Park1 rep3
+[13/105] SKIP V0 Park2 rep1 (already done)
+[14/105] RUN  V0 Park2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V0/Park2/rep2
+[14/105] OK   V0 Park2 rep2
+[15/105] RUN  V0 Park2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V0/Park2/rep3
+[15/105] OK   V0 Park2 rep3
+[16/105] SKIP V1 Airfield1 rep1 (already done)
+[17/105] RUN  V1 Airfield1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V1/Airfield1/rep2
+[17/105] OK   V1 Airfield1 rep2
+[18/105] RUN  V1 Airfield1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V1/Airfield1/rep3
+[18/105] OK   V1 Airfield1 rep3
+[19/105] SKIP V1 Airfield2 rep1 (already done)
+[20/105] RUN  V1 Airfield2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V1/Airfield2/rep2
+[20/105] OK   V1 Airfield2 rep2
+[21/105] RUN  V1 Airfield2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V1/Airfield2/rep3
+[21/105] OK   V1 Airfield2 rep3
+[22/105] SKIP V1 BikeTunnel1 rep1 (already done)
+[23/105] RUN  V1 BikeTunnel1 rep2
+105 total jobs
+[1/105] SKIP V0 Airfield1 rep1 (already done)
+[2/105] SKIP V0 Airfield1 rep2 (already done)
+[3/105] SKIP V0 Airfield1 rep3 (already done)
+[4/105] SKIP V0 Airfield2 rep1 (already done)
+[5/105] SKIP V0 Airfield2 rep2 (already done)
+[6/105] SKIP V0 Airfield2 rep3 (already done)
+[7/105] SKIP V0 BikeTunnel1 rep1 (already done)
+[8/105] SKIP V0 BikeTunnel1 rep2 (already done)
+[9/105] SKIP V0 BikeTunnel1 rep3 (already done)
+[10/105] SKIP V0 Park1 rep1 (already done)
+[11/105] SKIP V0 Park1 rep2 (already done)
+[12/105] SKIP V0 Park1 rep3 (already done)
+[13/105] SKIP V0 Park2 rep1 (already done)
+[14/105] SKIP V0 Park2 rep2 (already done)
+[15/105] SKIP V0 Park2 rep3 (already done)
+[16/105] SKIP V1 Airfield1 rep1 (already done)
+[17/105] SKIP V1 Airfield1 rep2 (already done)
+[18/105] SKIP V1 Airfield1 rep3 (already done)
+[19/105] SKIP V1 Airfield2 rep1 (already done)
+[20/105] SKIP V1 Airfield2 rep2 (already done)
+[21/105] SKIP V1 Airfield2 rep3 (already done)
+[22/105] SKIP V1 BikeTunnel1 rep1 (already done)
+[23/105] RUN  V1 BikeTunnel1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V1/BikeTunnel1/rep2
+[23/105] OK   V1 BikeTunnel1 rep2
+[24/105] RUN  V1 BikeTunnel1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V1/BikeTunnel1/rep3
+[24/105] OK   V1 BikeTunnel1 rep3
+[25/105] SKIP V1 Park1 rep1 (already done)
+[26/105] RUN  V1 Park1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V1/Park1/rep2
+[26/105] OK   V1 Park1 rep2
+[27/105] RUN  V1 Park1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V1/Park1/rep3
+[27/105] OK   V1 Park1 rep3
+[28/105] SKIP V1 Park2 rep1 (already done)
+[29/105] RUN  V1 Park2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V1/Park2/rep2
+[29/105] OK   V1 Park2 rep2
+[30/105] RUN  V1 Park2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V1/Park2/rep3
+[30/105] OK   V1 Park2 rep3
+[31/105] SKIP V2 Airfield1 rep1 (already done)
+[32/105] RUN  V2 Airfield1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V2/Airfield1/rep2
+[32/105] OK   V2 Airfield1 rep2
+[33/105] RUN  V2 Airfield1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V2/Airfield1/rep3
+[33/105] OK   V2 Airfield1 rep3
+[34/105] SKIP V2 Airfield2 rep1 (already done)
+[35/105] RUN  V2 Airfield2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V2/Airfield2/rep2
+[35/105] OK   V2 Airfield2 rep2
+[36/105] RUN  V2 Airfield2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V2/Airfield2/rep3
+[36/105] OK   V2 Airfield2 rep3
+[37/105] SKIP V2 BikeTunnel1 rep1 (already done)
+[38/105] RUN  V2 BikeTunnel1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V2/BikeTunnel1/rep2
+[38/105] OK   V2 BikeTunnel1 rep2
+[39/105] RUN  V2 BikeTunnel1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V2/BikeTunnel1/rep3
+[39/105] OK   V2 BikeTunnel1 rep3
+[40/105] SKIP V2 Park1 rep1 (already done)
+[41/105] RUN  V2 Park1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V2/Park1/rep2
+[41/105] OK   V2 Park1 rep2
+[42/105] RUN  V2 Park1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V2/Park1/rep3
+[42/105] OK   V2 Park1 rep3
+[43/105] SKIP V2 Park2 rep1 (already done)
+[44/105] RUN  V2 Park2 rep2
+105 total jobs
+[1/105] SKIP V0 Airfield1 rep1 (already done)
+[2/105] SKIP V0 Airfield1 rep2 (already done)
+[3/105] SKIP V0 Airfield1 rep3 (already done)
+[4/105] SKIP V0 Airfield2 rep1 (already done)
+[5/105] SKIP V0 Airfield2 rep2 (already done)
+[6/105] SKIP V0 Airfield2 rep3 (already done)
+[7/105] SKIP V0 BikeTunnel1 rep1 (already done)
+[8/105] SKIP V0 BikeTunnel1 rep2 (already done)
+[9/105] SKIP V0 BikeTunnel1 rep3 (already done)
+[10/105] SKIP V0 Park1 rep1 (already done)
+[11/105] SKIP V0 Park1 rep2 (already done)
+[12/105] SKIP V0 Park1 rep3 (already done)
+[13/105] SKIP V0 Park2 rep1 (already done)
+[14/105] SKIP V0 Park2 rep2 (already done)
+[15/105] SKIP V0 Park2 rep3 (already done)
+[16/105] SKIP V1 Airfield1 rep1 (already done)
+[17/105] SKIP V1 Airfield1 rep2 (already done)
+[18/105] SKIP V1 Airfield1 rep3 (already done)
+[19/105] SKIP V1 Airfield2 rep1 (already done)
+[20/105] SKIP V1 Airfield2 rep2 (already done)
+[21/105] SKIP V1 Airfield2 rep3 (already done)
+[22/105] SKIP V1 BikeTunnel1 rep1 (already done)
+[23/105] SKIP V1 BikeTunnel1 rep2 (already done)
+[24/105] SKIP V1 BikeTunnel1 rep3 (already done)
+[25/105] SKIP V1 Park1 rep1 (already done)
+[26/105] SKIP V1 Park1 rep2 (already done)
+[27/105] SKIP V1 Park1 rep3 (already done)
+[28/105] SKIP V1 Park2 rep1 (already done)
+[29/105] SKIP V1 Park2 rep2 (already done)
+[30/105] SKIP V1 Park2 rep3 (already done)
+[31/105] SKIP V2 Airfield1 rep1 (already done)
+[32/105] SKIP V2 Airfield1 rep2 (already done)
+[33/105] SKIP V2 Airfield1 rep3 (already done)
+[34/105] SKIP V2 Airfield2 rep1 (already done)
+[35/105] SKIP V2 Airfield2 rep2 (already done)
+[36/105] SKIP V2 Airfield2 rep3 (already done)
+[37/105] SKIP V2 BikeTunnel1 rep1 (already done)
+[38/105] SKIP V2 BikeTunnel1 rep2 (already done)
+[39/105] SKIP V2 BikeTunnel1 rep3 (already done)
+[40/105] SKIP V2 Park1 rep1 (already done)
+[41/105] SKIP V2 Park1 rep2 (already done)
+[42/105] SKIP V2 Park1 rep3 (already done)
+[43/105] SKIP V2 Park2 rep1 (already done)
+[44/105] RUN  V2 Park2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V2/Park2/rep2
+[44/105] OK   V2 Park2 rep2
+[45/105] RUN  V2 Park2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V2/Park2/rep3
+[45/105] OK   V2 Park2 rep3
+[46/105] SKIP V3 Airfield1 rep1 (already done)
+[47/105] RUN  V3 Airfield1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V3/Airfield1/rep2
+[47/105] OK   V3 Airfield1 rep2
+[48/105] RUN  V3 Airfield1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V3/Airfield1/rep3
+[48/105] OK   V3 Airfield1 rep3
+[49/105] SKIP V3 Airfield2 rep1 (already done)
+[50/105] RUN  V3 Airfield2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V3/Airfield2/rep2
+[50/105] OK   V3 Airfield2 rep2
+[51/105] RUN  V3 Airfield2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V3/Airfield2/rep3
+[51/105] OK   V3 Airfield2 rep3
+[52/105] SKIP V3 BikeTunnel1 rep1 (already done)
+[53/105] RUN  V3 BikeTunnel1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V3/BikeTunnel1/rep2
+[53/105] OK   V3 BikeTunnel1 rep2
+[54/105] RUN  V3 BikeTunnel1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V3/BikeTunnel1/rep3
+[54/105] OK   V3 BikeTunnel1 rep3
+[55/105] SKIP V3 Park1 rep1 (already done)
+[56/105] RUN  V3 Park1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V3/Park1/rep2
+[56/105] OK   V3 Park1 rep2
+[57/105] RUN  V3 Park1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V3/Park1/rep3
+[57/105] OK   V3 Park1 rep3
+[58/105] SKIP V3 Park2 rep1 (already done)
+[59/105] RUN  V3 Park2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V3/Park2/rep2
+[59/105] OK   V3 Park2 rep2
+[60/105] RUN  V3 Park2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V3/Park2/rep3
+[60/105] OK   V3 Park2 rep3
+[61/105] SKIP V5 Airfield1 rep1 (already done)
+[62/105] RUN  V5 Airfield1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V5/Airfield1/rep2
+[62/105] OK   V5 Airfield1 rep2
+[63/105] RUN  V5 Airfield1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V5/Airfield1/rep3
+[63/105] OK   V5 Airfield1 rep3
+[64/105] SKIP V5 Airfield2 rep1 (already done)
+[65/105] RUN  V5 Airfield2 rep2
+105 total jobs
+[1/105] SKIP V0 Airfield1 rep1 (already done)
+[2/105] SKIP V0 Airfield1 rep2 (already done)
+[3/105] SKIP V0 Airfield1 rep3 (already done)
+[4/105] SKIP V0 Airfield2 rep1 (already done)
+[5/105] SKIP V0 Airfield2 rep2 (already done)
+[6/105] SKIP V0 Airfield2 rep3 (already done)
+[7/105] SKIP V0 BikeTunnel1 rep1 (already done)
+[8/105] SKIP V0 BikeTunnel1 rep2 (already done)
+[9/105] SKIP V0 BikeTunnel1 rep3 (already done)
+[10/105] SKIP V0 Park1 rep1 (already done)
+[11/105] SKIP V0 Park1 rep2 (already done)
+[12/105] SKIP V0 Park1 rep3 (already done)
+[13/105] SKIP V0 Park2 rep1 (already done)
+[14/105] SKIP V0 Park2 rep2 (already done)
+[15/105] SKIP V0 Park2 rep3 (already done)
+[16/105] SKIP V1 Airfield1 rep1 (already done)
+[17/105] SKIP V1 Airfield1 rep2 (already done)
+[18/105] SKIP V1 Airfield1 rep3 (already done)
+[19/105] SKIP V1 Airfield2 rep1 (already done)
+[20/105] SKIP V1 Airfield2 rep2 (already done)
+[21/105] SKIP V1 Airfield2 rep3 (already done)
+[22/105] SKIP V1 BikeTunnel1 rep1 (already done)
+[23/105] SKIP V1 BikeTunnel1 rep2 (already done)
+[24/105] SKIP V1 BikeTunnel1 rep3 (already done)
+[25/105] SKIP V1 Park1 rep1 (already done)
+[26/105] SKIP V1 Park1 rep2 (already done)
+[27/105] SKIP V1 Park1 rep3 (already done)
+[28/105] SKIP V1 Park2 rep1 (already done)
+[29/105] SKIP V1 Park2 rep2 (already done)
+[30/105] SKIP V1 Park2 rep3 (already done)
+[31/105] SKIP V2 Airfield1 rep1 (already done)
+[32/105] SKIP V2 Airfield1 rep2 (already done)
+[33/105] SKIP V2 Airfield1 rep3 (already done)
+[34/105] SKIP V2 Airfield2 rep1 (already done)
+[35/105] SKIP V2 Airfield2 rep2 (already done)
+[36/105] SKIP V2 Airfield2 rep3 (already done)
+[37/105] SKIP V2 BikeTunnel1 rep1 (already done)
+[38/105] SKIP V2 BikeTunnel1 rep2 (already done)
+[39/105] SKIP V2 BikeTunnel1 rep3 (already done)
+[40/105] SKIP V2 Park1 rep1 (already done)
+[41/105] SKIP V2 Park1 rep2 (already done)
+[42/105] SKIP V2 Park1 rep3 (already done)
+[43/105] SKIP V2 Park2 rep1 (already done)
+[44/105] SKIP V2 Park2 rep2 (already done)
+[45/105] SKIP V2 Park2 rep3 (already done)
+[46/105] SKIP V3 Airfield1 rep1 (already done)
+[47/105] SKIP V3 Airfield1 rep2 (already done)
+[48/105] SKIP V3 Airfield1 rep3 (already done)
+[49/105] SKIP V3 Airfield2 rep1 (already done)
+[50/105] SKIP V3 Airfield2 rep2 (already done)
+[51/105] SKIP V3 Airfield2 rep3 (already done)
+[52/105] SKIP V3 BikeTunnel1 rep1 (already done)
+[53/105] SKIP V3 BikeTunnel1 rep2 (already done)
+[54/105] SKIP V3 BikeTunnel1 rep3 (already done)
+[55/105] SKIP V3 Park1 rep1 (already done)
+[56/105] SKIP V3 Park1 rep2 (already done)
+[57/105] SKIP V3 Park1 rep3 (already done)
+[58/105] SKIP V3 Park2 rep1 (already done)
+[59/105] SKIP V3 Park2 rep2 (already done)
+[60/105] SKIP V3 Park2 rep3 (already done)
+[61/105] SKIP V5 Airfield1 rep1 (already done)
+[62/105] SKIP V5 Airfield1 rep2 (already done)
+[63/105] SKIP V5 Airfield1 rep3 (already done)
+[64/105] SKIP V5 Airfield2 rep1 (already done)
+[65/105] RUN  V5 Airfield2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V5/Airfield2/rep2
+[65/105] OK   V5 Airfield2 rep2
+[66/105] RUN  V5 Airfield2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V5/Airfield2/rep3
+[66/105] OK   V5 Airfield2 rep3
+[67/105] SKIP V5 BikeTunnel1 rep1 (already done)
+[68/105] RUN  V5 BikeTunnel1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V5/BikeTunnel1/rep2
+[68/105] OK   V5 BikeTunnel1 rep2
+[69/105] RUN  V5 BikeTunnel1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V5/BikeTunnel1/rep3
+[69/105] OK   V5 BikeTunnel1 rep3
+[70/105] SKIP V5 Park1 rep1 (already done)
+[71/105] RUN  V5 Park1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V5/Park1/rep2
+[71/105] OK   V5 Park1 rep2
+[72/105] RUN  V5 Park1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V5/Park1/rep3
+[72/105] OK   V5 Park1 rep3
+[73/105] SKIP V5 Park2 rep1 (already done)
+[74/105] RUN  V5 Park2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V5/Park2/rep2
+[74/105] OK   V5 Park2 rep2
+[75/105] RUN  V5 Park2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V5/Park2/rep3
+[75/105] OK   V5 Park2 rep3
+[76/105] SKIP V6 Airfield1 rep1 (already done)
+[77/105] RUN  V6 Airfield1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V6/Airfield1/rep2
+[77/105] OK   V6 Airfield1 rep2
+[78/105] RUN  V6 Airfield1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V6/Airfield1/rep3
+[78/105] OK   V6 Airfield1 rep3
+[79/105] SKIP V6 Airfield2 rep1 (already done)
+[80/105] RUN  V6 Airfield2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V6/Airfield2/rep2
+[80/105] OK   V6 Airfield2 rep2
+[81/105] RUN  V6 Airfield2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V6/Airfield2/rep3
+[81/105] OK   V6 Airfield2 rep3
+[82/105] SKIP V6 BikeTunnel1 rep1 (already done)
+[83/105] RUN  V6 BikeTunnel1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V6/BikeTunnel1/rep2
+[83/105] OK   V6 BikeTunnel1 rep2
+[84/105] RUN  V6 BikeTunnel1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V6/BikeTunnel1/rep3
+[84/105] OK   V6 BikeTunnel1 rep3
+[85/105] SKIP V6 Park1 rep1 (already done)
+[86/105] RUN  V6 Park1 rep2
+105 total jobs
+[1/105] SKIP V0 Airfield1 rep1 (already done)
+[2/105] SKIP V0 Airfield1 rep2 (already done)
+[3/105] SKIP V0 Airfield1 rep3 (already done)
+[4/105] SKIP V0 Airfield2 rep1 (already done)
+[5/105] SKIP V0 Airfield2 rep2 (already done)
+[6/105] SKIP V0 Airfield2 rep3 (already done)
+[7/105] SKIP V0 BikeTunnel1 rep1 (already done)
+[8/105] SKIP V0 BikeTunnel1 rep2 (already done)
+[9/105] SKIP V0 BikeTunnel1 rep3 (already done)
+[10/105] SKIP V0 Park1 rep1 (already done)
+[11/105] SKIP V0 Park1 rep2 (already done)
+[12/105] SKIP V0 Park1 rep3 (already done)
+[13/105] SKIP V0 Park2 rep1 (already done)
+[14/105] SKIP V0 Park2 rep2 (already done)
+[15/105] SKIP V0 Park2 rep3 (already done)
+[16/105] SKIP V1 Airfield1 rep1 (already done)
+[17/105] SKIP V1 Airfield1 rep2 (already done)
+[18/105] SKIP V1 Airfield1 rep3 (already done)
+[19/105] SKIP V1 Airfield2 rep1 (already done)
+[20/105] SKIP V1 Airfield2 rep2 (already done)
+[21/105] SKIP V1 Airfield2 rep3 (already done)
+[22/105] SKIP V1 BikeTunnel1 rep1 (already done)
+[23/105] SKIP V1 BikeTunnel1 rep2 (already done)
+[24/105] SKIP V1 BikeTunnel1 rep3 (already done)
+[25/105] SKIP V1 Park1 rep1 (already done)
+[26/105] SKIP V1 Park1 rep2 (already done)
+[27/105] SKIP V1 Park1 rep3 (already done)
+[28/105] SKIP V1 Park2 rep1 (already done)
+[29/105] SKIP V1 Park2 rep2 (already done)
+[30/105] SKIP V1 Park2 rep3 (already done)
+[31/105] SKIP V2 Airfield1 rep1 (already done)
+[32/105] SKIP V2 Airfield1 rep2 (already done)
+[33/105] SKIP V2 Airfield1 rep3 (already done)
+[34/105] SKIP V2 Airfield2 rep1 (already done)
+[35/105] SKIP V2 Airfield2 rep2 (already done)
+[36/105] SKIP V2 Airfield2 rep3 (already done)
+[37/105] SKIP V2 BikeTunnel1 rep1 (already done)
+[38/105] SKIP V2 BikeTunnel1 rep2 (already done)
+[39/105] SKIP V2 BikeTunnel1 rep3 (already done)
+[40/105] SKIP V2 Park1 rep1 (already done)
+[41/105] SKIP V2 Park1 rep2 (already done)
+[42/105] SKIP V2 Park1 rep3 (already done)
+[43/105] SKIP V2 Park2 rep1 (already done)
+[44/105] SKIP V2 Park2 rep2 (already done)
+[45/105] SKIP V2 Park2 rep3 (already done)
+[46/105] SKIP V3 Airfield1 rep1 (already done)
+[47/105] SKIP V3 Airfield1 rep2 (already done)
+[48/105] SKIP V3 Airfield1 rep3 (already done)
+[49/105] SKIP V3 Airfield2 rep1 (already done)
+[50/105] SKIP V3 Airfield2 rep2 (already done)
+[51/105] SKIP V3 Airfield2 rep3 (already done)
+[52/105] SKIP V3 BikeTunnel1 rep1 (already done)
+[53/105] SKIP V3 BikeTunnel1 rep2 (already done)
+[54/105] SKIP V3 BikeTunnel1 rep3 (already done)
+[55/105] SKIP V3 Park1 rep1 (already done)
+[56/105] SKIP V3 Park1 rep2 (already done)
+[57/105] SKIP V3 Park1 rep3 (already done)
+[58/105] SKIP V3 Park2 rep1 (already done)
+[59/105] SKIP V3 Park2 rep2 (already done)
+[60/105] SKIP V3 Park2 rep3 (already done)
+[61/105] SKIP V5 Airfield1 rep1 (already done)
+[62/105] SKIP V5 Airfield1 rep2 (already done)
+[63/105] SKIP V5 Airfield1 rep3 (already done)
+[64/105] SKIP V5 Airfield2 rep1 (already done)
+[65/105] SKIP V5 Airfield2 rep2 (already done)
+[66/105] SKIP V5 Airfield2 rep3 (already done)
+[67/105] SKIP V5 BikeTunnel1 rep1 (already done)
+[68/105] SKIP V5 BikeTunnel1 rep2 (already done)
+[69/105] SKIP V5 BikeTunnel1 rep3 (already done)
+[70/105] SKIP V5 Park1 rep1 (already done)
+[71/105] SKIP V5 Park1 rep2 (already done)
+[72/105] SKIP V5 Park1 rep3 (already done)
+[73/105] SKIP V5 Park2 rep1 (already done)
+[74/105] SKIP V5 Park2 rep2 (already done)
+[75/105] SKIP V5 Park2 rep3 (already done)
+[76/105] SKIP V6 Airfield1 rep1 (already done)
+[77/105] SKIP V6 Airfield1 rep2 (already done)
+[78/105] SKIP V6 Airfield1 rep3 (already done)
+[79/105] SKIP V6 Airfield2 rep1 (already done)
+[80/105] SKIP V6 Airfield2 rep2 (already done)
+[81/105] SKIP V6 Airfield2 rep3 (already done)
+[82/105] SKIP V6 BikeTunnel1 rep1 (already done)
+[83/105] SKIP V6 BikeTunnel1 rep2 (already done)
+[84/105] SKIP V6 BikeTunnel1 rep3 (already done)
+[85/105] SKIP V6 Park1 rep1 (already done)
+[86/105] RUN  V6 Park1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V6/Park1/rep2
+[86/105] OK   V6 Park1 rep2
+[87/105] RUN  V6 Park1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V6/Park1/rep3
+[87/105] OK   V6 Park1 rep3
+[88/105] SKIP V6 Park2 rep1 (already done)
+[89/105] RUN  V6 Park2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V6/Park2/rep2
+[89/105] OK   V6 Park2 rep2
+[90/105] RUN  V6 Park2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V6/Park2/rep3
+[90/105] OK   V6 Park2 rep3
+[91/105] SKIP V7 Airfield1 rep1 (already done)
+[92/105] RUN  V7 Airfield1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V7/Airfield1/rep2
+[92/105] OK   V7 Airfield1 rep2
+[93/105] RUN  V7 Airfield1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V7/Airfield1/rep3
+[93/105] OK   V7 Airfield1 rep3
+[94/105] SKIP V7 Airfield2 rep1 (already done)
+[95/105] RUN  V7 Airfield2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V7/Airfield2/rep2
+[95/105] OK   V7 Airfield2 rep2
+[96/105] RUN  V7 Airfield2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V7/Airfield2/rep3
+[96/105] OK   V7 Airfield2 rep3
+[97/105] SKIP V7 BikeTunnel1 rep1 (already done)
+[98/105] RUN  V7 BikeTunnel1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V7/BikeTunnel1/rep2
+[98/105] OK   V7 BikeTunnel1 rep2
+[99/105] RUN  V7 BikeTunnel1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V7/BikeTunnel1/rep3
+[99/105] OK   V7 BikeTunnel1 rep3
+[100/105] SKIP V7 Park1 rep1 (already done)
+[101/105] RUN  V7 Park1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V7/Park1/rep2
+[101/105] OK   V7 Park1 rep2
+[102/105] RUN  V7 Park1 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V7/Park1/rep3
+[102/105] OK   V7 Park1 rep3
+[103/105] SKIP V7 Park2 rep1 (already done)
+[104/105] RUN  V7 Park2 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V7/Park2/rep2
+[104/105] OK   V7 Park2 rep2
+[105/105] RUN  V7 Park2 rep3
+run OK -> /home/wen/Desktop/Radar-Lidar/results/V7/Park2/rep3
+[105/105] OK   V7 Park2 rep3
+
+done: 105/105 succeeded
