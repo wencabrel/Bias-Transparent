@@ -1,0 +1,9 @@
+6 total jobs
+[1/6] RUN  CAL Park1 rep1
+run OK -> /home/wen/Desktop/Radar-Lidar/results/CAL/Park1/rep1
+[1/6] OK   CAL Park1 rep1
+[2/6] RUN  CAL Park1 rep2
+run OK -> /home/wen/Desktop/Radar-Lidar/results/CAL/Park1/rep2
+[2/6] OK   CAL Park1 rep2
+[3/6] RUN  CAL Park1 rep3
+run FAILED (launch exit 137) -- see /home/wen/Desktop/Radar-Lidar/results/CAL/Park1/rep3/run.log
