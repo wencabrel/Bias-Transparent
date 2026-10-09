@@ -18,8 +18,8 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 case "$VARIANT" in
-    V4|V0|V1|V2|V3|V5|V6|V7) BASE_CFG="$REPO_ROOT/configs/base/boxi.yaml" ;;
-    *) echo "unknown variant '$VARIANT' (expected one of V0,V1,V2,V3,V4,V5,V6,V7)" >&2; exit 1 ;;
+    V4|V0|V1|V2|V3|V5|V6|V7|CAL|CALROB) BASE_CFG="$REPO_ROOT/configs/base/boxi.yaml" ;;
+    *) echo "unknown variant '$VARIANT' (expected one of V0,V1,V2,V3,V4,V5,V6,V7,CAL,CALROB)" >&2; exit 1 ;;
 esac
 
 # Phase 2 ablation mapping (Part D.1/H Phase 2). V4 (upstream) leaves every
@@ -39,7 +39,20 @@ case "$VARIANT" in
     V5) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX=0) ;;  # V4 without prox
     V6) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_KAPPA_THRESH=30 TRAIL_RESEARCH_ABLATION_ETA=2.0) ;;  # paper settings
     V7) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ZEROVEL=0) ;;  # no x10 zero-vel boost
+    CAL|CALROB) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ALPHA=0 TRAIL_RESEARCH_ABLATION_GAMMA=0
+                               TRAIL_RESEARCH_ABLATION_PROX=0 TRAIL_RESEARCH_ABLATION_ZEROVEL=0) ;;
 esac
+
+# Phase 4 calibration mapping (Part D.1/H Phase 4). CAL = V0 + online noise calibration
+# (E.2); CALROB additionally fixes the robust Doppler loss (E.4, fact F10).
+declare -a CALIBRATION_ENV=()
+case "$VARIANT" in
+    CAL) CALIBRATION_ENV=(TRAIL_RESEARCH_CALIBRATION_CAL=1) ;;
+    CALROB) CALIBRATION_ENV=(TRAIL_RESEARCH_CALIBRATION_CAL=1 TRAIL_RESEARCH_CALIBRATION_ROB=1) ;;
+esac
+for kv in "${CALIBRATION_ENV[@]}"; do
+    ABLATION_ENV+=("$kv")
+done
 ABLATION_EXPORTS=""
 FLAGS_JSON="{"
 for kv in "${ABLATION_ENV[@]}"; do
