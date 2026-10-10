@@ -3,6 +3,8 @@
 #
 # Usage: scripts/run_seq.sh <variant> <sequence> <rep>
 #   variant  : V4 (upstream defaults) | V0,V1,V2,V3,V5,V6,V7 (Phase 2 ablation, Part D.1/H)
+#              | V0P (paper-equivalent V0: alpha/gamma off only, prox+zerovel left on --
+#                see the V0P case below) | CAL,CALP,CALROB (Phase 4 calibration)
 #   sequence : Airfield1 | Airfield2 | BikeTunnel1 | BikeTunnel2 | Park1 | Park2
 #   rep      : repetition number, e.g. 1, 2, 3
 #
@@ -18,8 +20,8 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 case "$VARIANT" in
-    V4|V0|V1|V2|V3|V5|V6|V7|CAL|CALROB) BASE_CFG="$REPO_ROOT/configs/base/boxi.yaml" ;;
-    *) echo "unknown variant '$VARIANT' (expected one of V0,V1,V2,V3,V4,V5,V6,V7,CAL,CALROB)" >&2; exit 1 ;;
+    V4|V0|V0P|V1|V2|V3|V5|V6|V7|CAL|CALP|CALROB) BASE_CFG="$REPO_ROOT/configs/base/boxi.yaml" ;;
+    *) echo "unknown variant '$VARIANT' (expected one of V0,V0P,V1,V2,V3,V4,V5,V6,V7,CAL,CALP,CALROB)" >&2; exit 1 ;;
 esac
 
 # Phase 2 ablation mapping (Part D.1/H Phase 2). V4 (upstream) leaves every
@@ -30,6 +32,13 @@ case "$VARIANT" in
     V4) ;;  # all defaults (upstream)
     V0) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ALPHA=0 TRAIL_RESEARCH_ABLATION_GAMMA=0
                        TRAIL_RESEARCH_ABLATION_PROX=0 TRAIL_RESEARCH_ABLATION_ZEROVEL=0) ;;
+    V0P) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ALPHA=0 TRAIL_RESEARCH_ABLATION_GAMMA=0) ;;
+        # "paper-equivalent" V0: the TRaIL paper's Table III ablation toggles ONLY alpha/gamma
+        # (Sec III-F/G); it never mentions RadarFactor_prox (an ICP-init Tikhonov stabilizer
+        # gated on degenerate_dim>0, state_manager.cpp:1621) or the x10 zero-vel boost
+        # (:1550) -- both are undocumented-in-the-paper mechanisms this project's original
+        # V0 ("nothing") also disabled, over-crippling it relative to what the paper actually
+        # tested as its fixed-weight baseline. See docs/DECISIONS.md 2026-10-10 entry.
     V1) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ALPHA=0 TRAIL_RESEARCH_ABLATION_GAMMA=0
                        TRAIL_RESEARCH_ABLATION_ZEROVEL=0) ;;  # prox only
     V2) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_GAMMA=0 TRAIL_RESEARCH_ABLATION_PROX=0
@@ -41,18 +50,28 @@ case "$VARIANT" in
     V7) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ZEROVEL=0) ;;  # no x10 zero-vel boost
     CAL|CALROB) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ALPHA=0 TRAIL_RESEARCH_ABLATION_GAMMA=0
                                TRAIL_RESEARCH_ABLATION_PROX=0 TRAIL_RESEARCH_ABLATION_ZEROVEL=0) ;;
+    CALP) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ALPHA=0 TRAIL_RESEARCH_ABLATION_GAMMA=0) ;;
+        # CAL built on V0P instead of V0 -- see V0P's comment above.
 esac
 
 # Phase 4 calibration mapping (Part D.1/H Phase 4). CAL = V0 + online noise calibration
-# (E.2); CALROB additionally fixes the robust Doppler loss (E.4, fact F10).
+# (E.2); CALROB additionally fixes the robust Doppler loss (E.4, fact F10). CALP = V0P +
+# online noise calibration (the paper-equivalent-baseline version of CAL).
 declare -a CALIBRATION_ENV=()
 case "$VARIANT" in
-    CAL) CALIBRATION_ENV=(TRAIL_RESEARCH_CALIBRATION_CAL=1) ;;
+    CAL|CALP) CALIBRATION_ENV=(TRAIL_RESEARCH_CALIBRATION_CAL=1) ;;
     CALROB) CALIBRATION_ENV=(TRAIL_RESEARCH_CALIBRATION_CAL=1 TRAIL_RESEARCH_CALIBRATION_ROB=1) ;;
 esac
 for kv in "${CALIBRATION_ENV[@]}"; do
     ABLATION_ENV+=("$kv")
 done
+
+# Determinism fixes (applied uniformly to every variant, not a Phase 2/4 ablation axis):
+# single-threaded rclcpp executor removes IMU/LiDAR/Radar callback reordering as a source
+# of run-to-run variance. Opt-in via env var upstream default is multi-threaded; combined
+# with tbb::parallel_deterministic_reduce (compiled in, no flag) in BuildLinearSystem.
+ABLATION_ENV+=(TRAIL_RESEARCH_SINGLE_THREADED_EXECUTOR=1)
+
 ABLATION_EXPORTS=""
 FLAGS_JSON="{"
 for kv in "${ABLATION_ENV[@]}"; do
