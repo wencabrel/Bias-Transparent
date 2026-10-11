@@ -5,6 +5,7 @@
 #   variant  : V4 (upstream defaults) | V0,V1,V2,V3,V5,V6,V7 (Phase 2 ablation, Part D.1/H)
 #              | V0P (paper-equivalent V0: alpha/gamma off only, prox+zerovel left on --
 #                see the V0P case below) | CAL,CALP,CALROB (Phase 4 calibration)
+#              | HARD,SOFT (Phase 5 degenerate-direction-aware ICP, Part D.1/H)
 #   sequence : Airfield1 | Airfield2 | BikeTunnel1 | BikeTunnel2 | Park1 | Park2
 #   rep      : repetition number, e.g. 1, 2, 3
 #
@@ -20,8 +21,8 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 case "$VARIANT" in
-    V4|V0|V0P|V1|V2|V3|V5|V6|V7|CAL|CALP|CALROB) BASE_CFG="$REPO_ROOT/configs/base/boxi.yaml" ;;
-    *) echo "unknown variant '$VARIANT' (expected one of V0,V0P,V1,V2,V3,V4,V5,V6,V7,CAL,CALP,CALROB)" >&2; exit 1 ;;
+    V4|V0|V0P|V1|V2|V3|V5|V6|V7|CAL|CALP|CALROB|HARD|SOFT) BASE_CFG="$REPO_ROOT/configs/base/boxi.yaml" ;;
+    *) echo "unknown variant '$VARIANT' (expected one of V0,V0P,V1,V2,V3,V4,V5,V6,V7,CAL,CALP,CALROB,HARD,SOFT)" >&2; exit 1 ;;
 esac
 
 # Phase 2 ablation mapping (Part D.1/H Phase 2). V4 (upstream) leaves every
@@ -52,16 +53,37 @@ case "$VARIANT" in
                                TRAIL_RESEARCH_ABLATION_PROX=0 TRAIL_RESEARCH_ABLATION_ZEROVEL=0) ;;
     CALP) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ALPHA=0 TRAIL_RESEARCH_ABLATION_GAMMA=0) ;;
         # CAL built on V0P instead of V0 -- see V0P's comment above.
+    HARD|SOFT) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ALPHA=0 TRAIL_RESEARCH_ABLATION_GAMMA=0) ;;
+        # Part D.1: "CAL+ROB + LiDAR info [HARD: projected out of / SOFT: attenuated along]
+        # U_d" -- built on V0P (alpha/gamma off, same as CALP) + CAL + ROB, plus the ICP
+        # degeneracy-aware solve (see research/degeneracy_aware_icp.h). HARD/SOFT's own
+        # guideline labels ("DR-LRIO idea" / Hatleskog's "probabilistic SNR") are
+        # substituted per docs/DECISIONS.md -- HARD is Zhang et al. 2016's hard
+        # truncated-eigenvalue pseudo-inverse (DR-LRIO's paper contains no explicit
+        # per-window projection step to re-implement), SOFT is Hatleskog & Alexis 2024's
+        # exact probabilistic method (arXiv:2410.10784).
 esac
 
 # Phase 4 calibration mapping (Part D.1/H Phase 4). CAL = V0 + online noise calibration
 # (E.2); CALROB additionally fixes the robust Doppler loss (E.4, fact F10). CALP = V0P +
-# online noise calibration (the paper-equivalent-baseline version of CAL).
+# online noise calibration (the paper-equivalent-baseline version of CAL). HARD/SOFT also
+# get CAL+ROB per the Part D.1 table.
 declare -a CALIBRATION_ENV=()
 case "$VARIANT" in
     CAL|CALP) CALIBRATION_ENV=(TRAIL_RESEARCH_CALIBRATION_CAL=1) ;;
-    CALROB) CALIBRATION_ENV=(TRAIL_RESEARCH_CALIBRATION_CAL=1 TRAIL_RESEARCH_CALIBRATION_ROB=1) ;;
+    CALROB|HARD|SOFT) CALIBRATION_ENV=(TRAIL_RESEARCH_CALIBRATION_CAL=1 TRAIL_RESEARCH_CALIBRATION_ROB=1) ;;
 esac
+
+# Phase 5 (Part D.1/H): HARD/SOFT degenerate-direction-aware ICP solve, see
+# include/research/degeneracy_aware_icp.h. Both off by default for every other variant.
+declare -a ICP_ENV=()
+case "$VARIANT" in
+    HARD) ICP_ENV=(TRAIL_RESEARCH_ICP_HARD=1) ;;
+    SOFT) ICP_ENV=(TRAIL_RESEARCH_ICP_SOFT=1) ;;
+esac
+for kv in "${ICP_ENV[@]}"; do
+    ABLATION_ENV+=("$kv")
+done
 for kv in "${CALIBRATION_ENV[@]}"; do
     ABLATION_ENV+=("$kv")
 done
