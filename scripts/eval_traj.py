@@ -78,6 +78,30 @@ def leg_scale_ratios(gt_t, gt_p, est_t, est_p):
     return out_ratio, back_ratio
 
 
+def quat_to_rot(q):
+    x, y, z, w = q.T
+    return np.stack([np.stack([1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)], -1),
+                     np.stack([2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)], -1),
+                     np.stack([2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)], -1)], -2)
+
+
+def corrected_estimate(est_tum, out_tum, lever=None, latency=0.0):
+    """Write a corrected copy of est_tum (GT is never modified).
+    lever: prism position in the body frame (from the GT .meta.json, prism_in_body); the
+      estimate is moved to the prism point p + R_est @ lever, so the estimate's own
+      orientation error still counts as error. Added 2026-10-26: the AP20 GT is the prism,
+      0.31 m ahead of the body origin; left unapplied, it reads as a ~0.3 m along-track error.
+    latency: seconds added to the estimate's timestamps (results/summaries/gt_latency.csv,
+      measured from the V4 reference run by speed-profile cross-correlation)."""
+    a = np.loadtxt(est_tum)
+    a = a[np.argsort(a[:, 0])]
+    if lever is not None:
+        a[:, 1:4] = a[:, 1:4] + np.einsum('nij,j->ni', quat_to_rot(a[:, 4:8]), np.asarray(lever))
+    a[:, 0] = a[:, 0] + latency
+    np.savetxt(out_tum, a, fmt='%.9f')
+    return out_tum
+
+
 def run_evo(cmd_module, gt_tum, est_tum, out_zip, extra_args):
     from evo.entry_points import ape, rpe
     entry = {'ape': ape, 'rpe': rpe}[cmd_module]
@@ -103,12 +127,25 @@ def main():
     ap.add_argument('--variants', nargs='+', default=ALL_VARIANTS)
     ap.add_argument('--sequences', nargs='+', default=ALL_SEQUENCES)
     ap.add_argument('--reps', type=int, nargs='+', default=[1, 2, 3])
+    # Defaults reproduce the original evaluation exactly (body origin, no time shift).
+    ap.add_argument('--gt-point', choices=['body', 'prism'], default='body',
+                    help='evaluate the estimate at the body origin (original) or at the GT prism')
+    ap.add_argument('--gt-latency', action='store_true',
+                    help='shift estimate timestamps by results/summaries/gt_latency.csv')
     args = ap.parse_args()
 
-    eval_dir = REPO_ROOT / 'results' / 'summaries' / 'eval'
+    tag = '_'.join(x for x in (('prism' if args.gt_point == 'prism' else ''),
+                               ('lat' if args.gt_latency else '')) if x)
+    suffix = f'_{tag}' if tag else ''
+    latencies = {}
+    if args.gt_latency:
+        with open(REPO_ROOT / 'results' / 'summaries' / 'gt_latency.csv', newline='') as f:
+            latencies = {r['sequence']: float(r['latency_s']) for r in csv.DictReader(f)}
+
+    eval_dir = REPO_ROOT / 'results' / 'summaries' / f'eval{suffix}'
     eval_dir.mkdir(parents=True, exist_ok=True)
 
-    csv_path = REPO_ROOT / 'results' / 'summaries' / 'eval_traj.csv'
+    csv_path = REPO_ROOT / 'results' / 'summaries' / f'eval_traj{suffix}.csv'
     existing = {}
     if csv_path.exists():
         with open(csv_path, newline='') as f:
@@ -132,6 +169,17 @@ def main():
                 run_dir.mkdir(parents=True, exist_ok=True)
                 ape_zip = run_dir / 'ape.zip'
                 rpe_zip = run_dir / 'rpe.zip'
+
+                if tag:
+                    lever = None
+                    if args.gt_point == 'prism':
+                        meta = json.loads((gt_tum.parent / f'{sequence}_gt.tum.meta.json').read_text())
+                        lever = meta['prism_in_body']
+                    if args.gt_latency and sequence not in latencies:
+                        print(f"SKIP {variant} {sequence} rep{rep}: no latency for {sequence}")
+                        continue
+                    est_tum = corrected_estimate(est_tum, run_dir / 'est_corrected.tum', lever,
+                                                 latencies.get(sequence, 0.0))
 
                 run_evo('ape', gt_tum, est_tum, ape_zip, [])
                 run_evo('rpe', gt_tum, est_tum, rpe_zip,
