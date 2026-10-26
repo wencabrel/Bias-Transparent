@@ -39,11 +39,30 @@ Phases -1 through 4 of the guideline are done (`docs/PROGRESS.md` has the full l
   not a substitute for the adaptive reweighting.
 - **PROXOBS** (an original fix found during this work, gating one radar factor on whether
   radar already observes the LiDAR-degenerate direction): a real, 3-rep-verified improvement
-  — BikeTunnel1 ATE mean 1.419m vs upstream's 2.067m. Park1 is already beaten by
-  unmodified upstream (0.819m vs the paper's 1.010m). Airfield1 remains an open,
-  documented gap (this repo: ~0.354m vs the paper's 0.183m) after fifteen
-  independently-verified investigation angles — logged as `UNKNOWN` in
-  `docs/OPEN_QUESTIONS.md` per the project's own rule rather than papered over.
+  — BikeTunnel1 ATE mean 1.419m vs upstream's 2.067m.
+- **Airfield1's "unreproducible" 0.183m — explained (2026-10-26).** The GT is the total
+  station's prism, mounted 0.31 m ahead of the IMU. Evaluating the estimate at the prism
+  point (`eval_traj.py --gt-point prism`, documented lever arm, nothing fitted) gives
+  upstream 0.178m vs the paper's 0.183m. A suspected 0.35 s clock offset was ruled out
+  (`scripts/gt_latency.py`: true latency 0.05–0.1 s).
+- **Radar elevation fix (`RadarElevShrink`, accepted as PROXOBSE).** The TI radar's noisy
+  elevation halves the vertical velocity it measures (z ratio 0.49 on two sequences), so a
+  boosted radar dragged the speed estimate 1–4% low. Passed all pre-registered checks.
+- **BikeTunnel1 return-leg drift — diagnosed.** Upstream never estimates IMU biases
+  (contrary to the paper), and a tilt/gravity error leaks into the forward axis where the
+  LiDAR is blind. Gamma (1/sphericity) stays ~3.6 in a tunnel. An information-equalizing
+  gamma (`GammaInfoEqualize`, PROXOBSEG) cuts BikeTunnel1 by 43% but missed the Airfield1
+  guard by 3.4 mm, so it is not yet accepted (a higher-rep comparison is the next step).
+
+Prism-point ATE (m), 3-rep means:
+
+| Sequence | Paper | Upstream (V4) | Ours (PROXOBSE, accepted) | PROXOBSEG (candidate) |
+|---|---|---|---|---|
+| Airfield1 | 0.183 | 0.178 | **0.077** | 0.089 |
+| Park1 | 1.010 | 0.720 | 0.391 | **0.289** |
+| BikeTunnel1 | 1.532 | 2.377 | 1.745 | **1.080** |
+
+Full account: `docs/DECISIONS.md` and `docs/OPEN_QUESTIONS.md` (2026-10-26 entries).
 
 Phases 5–7 are not started.
 
@@ -79,7 +98,8 @@ hash, flags — see `CLAUDE.md` rule 6).
 
 A standalone native viewer (Open3D + rclpy; not rviz, not upstream's `trail_rviz.rviz`)
 for watching a sequence run live: point cloud colored by age (green=fresh →
-red=40s+/drift-affected), estimated path vs. GT overlay, live drift estimate, raw IMU
+red=40s+/drift-affected), estimated path vs. GT overlay, live error and "ATE so far"
+(same prism-point, full-data rigid alignment as `eval_traj.py --gt-point prism`), raw IMU
 readout, and a sequence dropdown with Run/Stop to start/switch sequences from inside the
 app. Code: `scripts/native_viewer/`.
 
@@ -101,9 +121,12 @@ docker build -t trail-odom-native-viewer:latest scripts/native_viewer
 
 **Run** (needs an X11 desktop session):
 ```
-scripts/run_native_viewer.sh [sequence] [start_time]   # e.g. scripts/run_native_viewer.sh Park1 20
+scripts/run_native_viewer.sh [sequence] [start_time] [method]   # e.g. ... BikeTunnel1 20 PROXOBSEG
 ```
-Defaults to `Park1`, `start_time=20`, auto-starts that sequence. Pick a different one
+Defaults to `Park1`, `start_time=20`, method `V4` (unmodified upstream), auto-starts that
+sequence. `method` can be `PROXOBSE` (our accepted method) or `PROXOBSEG` (+ the
+information-equalizing gamma); it is shown in the panel and applies to every run started
+from it. Pick a different one
 from the panel's dropdown and click "Run selected sequence" any time, including while
 one is already running (it stops the old one first). `MAX_RANGE` env var controls how
 far back (in meters) the point cloud/path persist before being pruned (default 150).
