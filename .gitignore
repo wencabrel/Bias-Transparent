@@ -2,6 +2,9 @@ CLAUDE.md
 data/
 results/*
 !results/summaries/
+# Raw per-run evo output under results/summaries/eval* -- regenerates from eval_traj.py,
+# never commit it (CLAUDE.md rule 5). The eval_traj*.csv summaries stay tracked.
+results/summaries/eval*/
 ws/build/
 ws/install/
 ws/log/
