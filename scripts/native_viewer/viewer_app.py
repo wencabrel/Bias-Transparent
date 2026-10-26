@@ -349,10 +349,11 @@ class ViewerApp:
         self._path_legend = gui.Label("path color: cyan=estimate, magenta=GT")
 
         self._stat_gt_status = gui.Label("GT: loading...")
-        self._stat_drift = gui.Label("live drift: --")
+        self._stat_drift = gui.Label("error now: --")
+        self._stat_ate = gui.Label("ATE so far: --")
         self._drift_note = gui.Label(
-            "(approx: frozen one-time alignment vs full-trajectory\n"
-            " evo result in results/summaries/eval_traj.csv)")
+            "(prism point, rigid fit on all data so far -- same method as\n"
+            " results/summaries/eval_traj_prism.csv; live state, not final spline)")
 
         self._stat_imu_gyro = gui.Label("gyro: -- rad/s")
         self._stat_imu_accel = gui.Label("accel: -- m/s2")
@@ -372,6 +373,11 @@ class ViewerApp:
         self._stat_running = gui.Label(f"running: {sequence}")
         self._stat_running.text_color = gui.Color(0.0, 0.85, 1.0)
         panel.add_child(self._stat_running)
+        # set by run_native_viewer.sh's 3rd argument; the research flags it maps to are in
+        # this process's env, so every run started from the panel uses that method
+        method_lbl = gui.Label(f"method: {os.environ.get('TRAIL_VIEWER_METHOD', 'V4')}")
+        method_lbl.text_color = gui.Color(1.0, 0.75, 0.2)
+        panel.add_child(method_lbl)
         panel.add_fixed(0.5 * em)
         panel.add_child(_section_header("Sequence", self.COLOR_STATS))
         panel.add_child(self._sequence_combo)
@@ -397,6 +403,7 @@ class ViewerApp:
         panel.add_child(_section_header("Ground truth", self.COLOR_GT))
         panel.add_child(self._stat_gt_status)
         panel.add_child(self._stat_drift)
+        panel.add_child(self._stat_ate)
         panel.add_child(self._drift_note)
         panel.add_fixed(0.5 * em)
         panel.add_child(_section_header("IMU (raw, /gt_box/cpt7/.../imu)", self.COLOR_IMU))
@@ -432,7 +439,7 @@ class ViewerApp:
         self.vehicle_view.clear()
         self.grid_view.clear()
         self.grid_view.update_for_bounds(20.0)
-        self._gt_drawn = False
+        self._gt_drawn_version = -1
         self.aligner = GtAligner(self._gt_path_for(seq))
         self.bridge.reset_for_new_run()
         self._last_cloud_version = -1
@@ -507,10 +514,11 @@ class ViewerApp:
                 self.scene_widget.look_at(list(p), [p[0] - 15, p[1] - 15, p[2] + 10], [0, 0, 1])
 
             if snap["vehicle_abs_t"] is not None:
-                self.aligner.add_sample(snap["vehicle_abs_t"], snap["vehicle_pos"])
-                if self.aligner.status == "ready" and not self._gt_drawn:
+                self.aligner.add_sample(snap["vehicle_abs_t"], snap["vehicle_pos"], snap["vehicle_quat"])
+                if self.aligner.status == "ready" and self.aligner.version != self._gt_drawn_version:
+                    # redraw on every refit: GT up to now, in the latest alignment
                     self.gt_path_view.update(self.aligner.gt_path_in_est_frame())
-                    self._gt_drawn = True
+                    self._gt_drawn_version = self.aligner.version
                 self._update_gt_labels(snap)
 
         if snap["imu_gyro"] is not None and snap["imu_version"] != self._last_imu_version:
@@ -529,22 +537,26 @@ class ViewerApp:
         status = self.aligner.status
         if status == "unavailable":
             self._stat_gt_status.text = "GT: unavailable for this sequence"
-            self._stat_drift.text = "live drift: --"
+            self._stat_drift.text = "error now: --"
+            self._stat_ate.text = "ATE so far: --"
             return
         if status == "collecting":
             self._stat_gt_status.text = "GT: collecting alignment samples..."
-            self._stat_drift.text = "live drift: --"
+            self._stat_drift.text = "error now: --"
+            self._stat_ate.text = "ATE so far: --"
             return
-        self._stat_gt_status.text = "GT: aligned (frozen, early-window fit)"
-        drift = self.aligner.live_drift(snap["vehicle_abs_t"], snap["vehicle_pos"])
+        self._stat_gt_status.text = "GT: aligned (refit on all data so far)"
+        if self.aligner.ate_so_far is not None:
+            self._stat_ate.text = f"ATE so far: {self.aligner.ate_so_far:.3f} m"
+        drift = self.aligner.live_error(snap["vehicle_abs_t"], snap["vehicle_pos"], snap["vehicle_quat"])
         if drift is not None:
-            self._stat_drift.text = f"live drift: {drift:.2f} m"
+            self._stat_drift.text = f"error now: {drift:.3f} m"
         else:
             # Not a bug: the estimate can run past where GT's own recorded time range
             # ends (verified on Park1 -- the estimate continues ~47s beyond it), and
             # showing a clamped drift there would repeat the exact bug that corrupted
             # the alignment fit in the first place.
-            self._stat_drift.text = "live drift: -- (past GT's recorded time range)"
+            self._stat_drift.text = "error now: -- (past GT's recorded time range)"
 
 
 def main():

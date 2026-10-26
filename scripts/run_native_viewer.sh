@@ -22,15 +22,28 @@
 # into sequence_runner.py so it can be done repeatedly, once per sequence switch, not
 # just once at startup).
 #
-# Usage: scripts/run_native_viewer.sh [initial_sequence] [start_time]
+# Usage: scripts/run_native_viewer.sh [initial_sequence] [start_time] [method]
 #   initial_sequence : Airfield1 | Airfield2 | BikeTunnel1 | BikeTunnel2 | Park1 | Park2
 #                       (default Park1 -- just the dropdown's starting selection, not a
 #                       hard requirement; pick a different one from the UI any time)
 #   start_time        : seconds into the bag to start from (default 20, matching run_seq.sh)
+#   method            : V4 (default, unmodified upstream) | PROXOBSE | PROXOBSEG -- same
+#                       research flags as scripts/run_seq.sh's variants of those names; they
+#                       are exported into the container, so every run started from the
+#                       panel inherits them.
 set -eo pipefail
 
 SEQUENCE="${1:-Park1}"
 START_TIME="${2:-20}"
+METHOD="${3:-V4}"
+case "$METHOD" in
+    V4) METHOD_ENV=() ;;
+    PROXOBSE) METHOD_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5) ;;
+    PROXOBSEG) METHOD_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1) ;;
+    *) echo "unknown method '$METHOD' (expected V4, PROXOBSE or PROXOBSEG)" >&2; exit 1 ;;
+esac
+METHOD_DOCKER_ENV=(--env="TRAIL_VIEWER_METHOD=$METHOD")
+for kv in "${METHOD_ENV[@]}"; do METHOD_DOCKER_ENV+=(--env="$kv"); done
 
 if [ -z "$DISPLAY" ]; then
     echo "no \$DISPLAY set -- this needs an X11 desktop session to show the viewer" >&2
@@ -50,13 +63,14 @@ docker rm -f trail_odom_native_viewer >/dev/null 2>&1 || true
 
 xhost +local:docker >/dev/null
 
-echo "Starting $SEQUENCE with the native viewer -- a window should open on this" \
+echo "Starting $SEQUENCE ($METHOD) with the native viewer -- a window should open on this" \
      "desktop in a few seconds. Ctrl-C here stops everything."
 
 docker run --rm -i --ipc=host --net=host \
     --device nvidia.com/gpu=all \
     --env="XDG_RUNTIME_DIR=/tmp/xdg-runtime" \
     --env="MAX_RANGE=$MAX_RANGE" \
+    "${METHOD_DOCKER_ENV[@]}" \
     --name trail_odom_native_viewer \
     --user root \
     --hostname "$(hostname)" \
