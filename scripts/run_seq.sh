@@ -26,8 +26,8 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 case "$VARIANT" in
-    V4|V0|V0P|V1|V2|V3|V5|V6|V7|CAL|CALP|CALROB|CALROBP|HARD|SOFT|NUIS|OURS|HARD4|SOFT4|NUIS4|OURS4|CAL4|RADARFIX|ROB4|PROXOBS|PROXOBS2|PLANERES|RADARMAP) BASE_CFG="$REPO_ROOT/configs/base/boxi.yaml" ;;
-    *) echo "unknown variant '$VARIANT' (expected one of V0,V0P,V1,V2,V3,V4,V5,V6,V7,CAL,CALP,CALROB,CALROBP,HARD,SOFT,NUIS,OURS,HARD4,SOFT4,NUIS4,OURS4,CAL4,RADARFIX,ROB4,PROXOBS,PROXOBS2,PLANERES,RADARMAP)" >&2; exit 1 ;;
+    V4|V0|V0P|V1|V2|V3|V5|V6|V7|CAL|CALP|CALROB|CALROBP|HARD|SOFT|NUIS|OURS|HARD4|SOFT4|NUIS4|OURS4|CAL4|RADARFIX|ROB4|PROXOBS|PROXOBS2|RCOND|PROXOBSC|PAPERN|PROXOBSN|PLANERES|RADARMAP) BASE_CFG="$REPO_ROOT/configs/base/boxi.yaml" ;;
+    *) echo "unknown variant '$VARIANT' (expected one of V0,V0P,V1,V2,V3,V4,V5,V6,V7,CAL,CALP,CALROB,CALROBP,HARD,SOFT,NUIS,OURS,HARD4,SOFT4,NUIS4,OURS4,CAL4,RADARFIX,ROB4,PROXOBS,PROXOBS2,RCOND,PROXOBSC,PAPERN,PROXOBSN,PLANERES,RADARMAP)" >&2; exit 1 ;;
 esac
 
 # Phase 2 ablation mapping (Part D.1/H Phase 2). V4 (upstream) leaves every
@@ -49,6 +49,21 @@ case "$VARIANT" in
         # too) rather than discarding prox everywhere degenerate_dim>0. Keeps prox doing its
         # stated job (stabilize ICP when nothing else constrains a weak direction) exactly
         # where that's true, and stops it fighting good radar information everywhere else.
+    RCOND) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_RADAR_COND_GATE=1) ;;
+        # V4 + AblationConfig::RadarCondGate (added 2026-10-26): radar counts as observing
+        # the LiDAR-degenerate subspace only if cond(Z Z^T) <= 30 (the paper's own stated
+        # bound, docs/FACTS.md F3) instead of upstream's rank check (rel_tol 1e-8). Isolates
+        # this one change on top of upstream.
+    PROXOBSC) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_COND_GATE=1) ;;
+        # PROXOBS + RadarCondGate: the same single definition of "radar observes the
+        # degenerate subspace" now drives both the alpha/gamma/zero-vel boost and PROXOBS's
+        # prox gate. Added 2026-10-26.
+    PAPERN) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PAPER_N=1) ;;
+        # V4 + AblationConfig::PaperNormalMatrix (added 2026-10-26): degeneracy detector and
+        # gamma's sphericity use the paper's unweighted plane-normal matrix N = sum n n^T
+        # (paper eq. 18) instead of the code's planarity-weighted sum (FACTS.md F1).
+    PROXOBSN) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_PAPER_N=1) ;;
+        # PROXOBS (our method) + PaperNormalMatrix. Added 2026-10-26.
     PROXOBS2) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_FILTER_FIX=1) ;;
         # PROXOBS (the confirmed BikeTunnel1 win, 1.419m mean vs paper's 1.532m) + RADARFIX
         # (the radar-inlier-filter-fallback fix, neutral alone on Airfield1 but never tested
