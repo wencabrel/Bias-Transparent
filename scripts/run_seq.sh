@@ -69,6 +69,14 @@ case "$VARIANT" in
         # of the TI radar's noisy elevation (measured z-velocity attenuation 0.49, both seqs).
     PROXOBSE) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5) ;;
         # PROXOBS (our method) + RadarElevShrink=0.5. Added 2026-10-26.
+    ELEVB) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_EST_BIAS=1) ;;
+        # ELEV + AblationConfig::EstimateImuBias (added 2026-10-26): optimize ba/bg per window
+        # as the paper states; upstream holds them constant at 0.
+    PROXOBSEB) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_EST_BIAS=1) ;;
+        # PROXOBSE (our method) + EstimateImuBias. Added 2026-10-26.
+    PROXOBSEBG) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_EST_BIAS=1 TRAIL_RESEARCH_ABLATION_EST_GRAVITY=1) ;;
+        # PROXOBSEB + AblationConfig::EstimateGravity (gravity direction refined per window;
+        # departs from the paper's fixed gravity). Added 2026-10-26.
     PROXOBS2) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_FILTER_FIX=1) ;;
         # PROXOBS (the confirmed BikeTunnel1 win, 1.419m mean vs paper's 1.532m) + RADARFIX
         # (the radar-inlier-filter-fallback fix, neutral alone on Airfield1 but never tested
