@@ -117,6 +117,35 @@ def run_evo(cmd_module, gt_tum, est_tum, out_zip, extra_args):
         sys.argv = argv
 
 
+def position_rpe(gt_tum, est_tum, delta_m=1.0, max_dt=0.01):
+    """Relative position error for position-only GT (added 2026-10-28).
+
+    The Boxi GT (AP20 prism) carries no orientation -- every quaternion is 0 0 0 1 -- so
+    evo_rpe's trans_part, which expresses each segment in the frame of its first pose,
+    compares a world-frame GT displacement with a body-frame estimate displacement and
+    reads ~sqrt(2) x delta whatever the accuracy. Here the estimate is associated with GT
+    (nearest stamp within max_dt, as evo), rigidly aligned (Umeyama, no scale, as the ATE),
+    and for every GT point i, j is the first point >= delta_m further along the GT path;
+    the error is |(p_est_j - p_est_i) - (p_gt_j - p_gt_i)| in the world frame."""
+    gt_t, gt_p = load_tum(gt_tum)
+    est_t, est_p = load_tum(est_tum)
+    k = np.clip(np.searchsorted(est_t, gt_t), 1, len(est_t) - 1)
+    k = np.where(np.abs(est_t[k - 1] - gt_t) < np.abs(est_t[k] - gt_t), k - 1, k)
+    ok = np.abs(est_t[k] - gt_t) < max_dt
+    g, e = gt_p[ok], est_p[k[ok]]
+    cg, ce = g.mean(0), e.mean(0)
+    u, _, vt = np.linalg.svd((e - ce).T @ (g - cg))
+    r = vt.T @ np.diag([1, 1, np.sign(np.linalg.det(vt.T @ u.T))]) @ u.T
+    e = (e - ce) @ r.T + cg
+    s = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(g, axis=0), axis=1))])
+    j = np.searchsorted(s, s + delta_m)
+    i = np.nonzero(j < len(g))[0]
+    j = j[i]
+    err = np.linalg.norm((e[j] - e[i]) - (g[j] - g[i]), axis=1)
+    return dict(rmse=float(np.sqrt(np.mean(err ** 2))), mean=float(err.mean()),
+                std=float(err.std()), max=float(err.max()))
+
+
 def read_stats(zip_path):
     with zipfile.ZipFile(zip_path) as z:
         return json.loads(z.read('stats.json'))
@@ -132,10 +161,14 @@ def main():
                     help='evaluate the estimate at the body origin (original) or at the GT prism')
     ap.add_argument('--gt-latency', action='store_true',
                     help='shift estimate timestamps by results/summaries/gt_latency.csv')
+    ap.add_argument('--rpe', choices=['evo', 'position'], default='evo',
+                    help="relative error: evo_rpe trans_part (original; invalid for this "
+                         "orientation-free GT, see position_rpe) or world-frame position RPE")
     args = ap.parse_args()
 
     tag = '_'.join(x for x in (('prism' if args.gt_point == 'prism' else ''),
-                               ('lat' if args.gt_latency else '')) if x)
+                               ('lat' if args.gt_latency else ''),
+                               ('rpepos' if args.rpe == 'position' else '')) if x)
     suffix = f'_{tag}' if tag else ''
     latencies = {}
     if args.gt_latency:
@@ -182,11 +215,13 @@ def main():
                                                  latencies.get(sequence, 0.0))
 
                 run_evo('ape', gt_tum, est_tum, ape_zip, [])
-                run_evo('rpe', gt_tum, est_tum, rpe_zip,
-                        ['--delta', '1', '--delta_unit', 'm', '--all_pairs'])
-
                 ape_stats = read_stats(ape_zip)
-                rpe_stats = read_stats(rpe_zip)
+                if args.rpe == 'position':
+                    rpe_stats = position_rpe(gt_tum, est_tum)
+                else:
+                    run_evo('rpe', gt_tum, est_tum, rpe_zip,
+                            ['--delta', '1', '--delta_unit', 'm', '--all_pairs'])
+                    rpe_stats = read_stats(rpe_zip)
 
                 gt_t, gt_p = load_tum(gt_tum)
                 est_t, est_p = load_tum(est_tum)
