@@ -68,7 +68,10 @@ xhost +local:docker >/dev/null
 echo "Starting $SEQUENCE ($METHOD) with the native viewer -- a window should open on this" \
      "desktop in a few seconds. Ctrl-C here stops everything."
 
+# 9 GB cap (viewer + trail_node): an overrun kills only this container, not the desktop
+# session (systemd-oomd kills at 50% memory pressure, as on 2026-10-28/29).
 docker run --rm -i --ipc=host --net=host \
+    --memory=9g --memory-swap=9g \
     --device nvidia.com/gpu=all \
     --env="XDG_RUNTIME_DIR=/tmp/xdg-runtime" \
     --env="MAX_RANGE=$MAX_RANGE" \
