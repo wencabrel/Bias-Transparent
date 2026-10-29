@@ -24,7 +24,7 @@ import open3d.visualization.rendering as rendering
 
 from ros_bridge import RosBridge
 from gt_tools import GtAligner, load_gt_tum, load_prism_lever, quat_to_rot, kabsch
-from sequence_runner import SequenceRunner, SEQUENCES, LIVE_VIZ_DIR
+from sequence_runner import SequenceRunner, SEQUENCES, METHODS, LIVE_VIZ_DIR
 
 AGE_MAX_S = 40.0  # seconds; matches the drift-crossover measurement in run_live_rviz.sh
 
@@ -363,7 +363,12 @@ class ViewerApp:
         self.runner = SequenceRunner()
         self.aligner = GtAligner(self._gt_path_for(sequence))
         self._gt_drawn_version = -1
+        # initial method from run_native_viewer.sh's 3rd argument; the panel's Method
+        # dropdown changes it for runs started afterwards
         self._method = os.environ.get('TRAIL_VIEWER_METHOD', 'V4')
+        if self._method not in METHODS:
+            self._method = 'V4'
+        self._run_method = self._method   # method the current/last run was started with
         summaries = os.path.join(repo_root, 'results', 'summaries')
         self._ref_ate = _load_ref_ate([
             os.path.join(summaries, 'eval_traj_prism.csv'),
@@ -403,9 +408,16 @@ class ViewerApp:
         if sequence in SEQUENCES:
             self._sequence_combo.selected_index = SEQUENCES.index(sequence)
         self._sequence_combo.tooltip = "Sequence to launch from this panel"
+        self._method_combo = gui.Combobox()
+        for name in METHODS:
+            self._method_combo.add_item(name)
+        self._method_combo.selected_index = list(METHODS).index(self._method)
+        self._method_combo.tooltip = ("Method (research flags) for the next run. Flags are read "
+                                      "when trail_node starts, so a run in progress keeps its own.")
+        self._method_combo.set_on_selection_changed(self._on_method_changed)
         self._run_status = _txt("idle", MUTED)
         btn_run = _button("Run sequence", self.COLOR_STATS,
-                          tooltip="Start the selected sequence with the current method flags")
+                          tooltip="Start the selected sequence with the selected method")
         btn_run.set_on_clicked(self._on_run_clicked)
         btn_stop = _button("Stop", self.COLOR_RESET, tooltip="Stop the running sequence")
         btn_stop.set_on_clicked(self._on_stop_clicked)
@@ -446,9 +458,8 @@ class ViewerApp:
         chip_row = gui.Horiz(0.9 * em)
         self._hdr_status = _status("IDLE", FAINT)
         chip_row.add_child(self._hdr_status)
-        # set by run_native_viewer.sh's 3rd argument; the research flags it maps to are in
-        # this process's env, so every run started from the panel uses that method
-        chip_row.add_child(_status(f"METHOD {self._method}", AMBER))
+        self._hdr_method = _status(f"METHOD {self._method}", AMBER)
+        chip_row.add_child(self._hdr_method)
         chip_row.add_stretch()
         self._stat_running = _txt(sequence, MUTED)
         chip_row.add_child(self._stat_running)
@@ -466,7 +477,7 @@ class ViewerApp:
         kpi_row2 = gui.Horiz(0.5 * em)
         card, self._stat_points = _kpi_card("map points", VIOLET, em)
         kpi_row2.add_child(card)
-        card, self._stat_ate = _kpi_card(f"ATE - {self._method}", MAGENTA, em)
+        card, self._stat_ate = _kpi_card("ATE - REF", MAGENTA, em)
         self._stat_ate.tooltip = ("Benchmark ATE for this method+sequence, from "
                                   "eval_traj_prism.csv (headless reps, final spline). "
                                   "This run's own score appears under FINAL ATE once "
@@ -475,9 +486,12 @@ class ViewerApp:
         panel.add_child(kpi_row2)
         panel.add_fixed(0.25 * em)
 
-        # Sequence control.
-        panel.add_child(_section("Sequence", self.COLOR_STATS, em))
+        # Run control: which sequence, with which method.
+        panel.add_child(_section("Run", self.COLOR_STATS, em))
+        panel.add_child(_txt("SEQUENCE", MUTED))
         panel.add_child(self._sequence_combo)
+        panel.add_child(_txt("METHOD", MUTED))
+        panel.add_child(self._method_combo)
         run_row = gui.Horiz(0.5 * em)
         run_row.add_child(btn_run)
         run_row.add_child(btn_stop)
@@ -515,7 +529,8 @@ class ViewerApp:
         panel.add_child(self._stat_live_ate)
         # The benchmark number for this method+sequence (headless reps, final
         # spline) -- what the run should be compared against.
-        panel.add_child(_txt(f"REF ATE - {self._method}", MUTED))
+        self._ref_ate_caption = _txt(f"REF ATE - {self._method}", MUTED)
+        panel.add_child(self._ref_ate_caption)
         self._stat_ref_ate = _txt("--")
         panel.add_child(self._stat_ref_ate)
         # Filled in when the bag finishes: this run's own poses.txt scored with
@@ -596,6 +611,7 @@ class ViewerApp:
         self._last_vehicle_version = -1
         self._last_imu_version = -1
 
+        self._run_method = self._method
         self.sequence = seq
         self.window.title = _window_title(seq)
         self._stat_running.text = seq
@@ -603,9 +619,21 @@ class ViewerApp:
         self._stat_final_ate.text_color = gui.Color(*FAINT)
         self._awaiting_final_ate = True
         self._update_ref_ate()
-        self.runner.start(seq, start_time=self.start_time)
+        self.runner.start(seq, start_time=self.start_time, method=self._run_method)
         self._set_live(True)
         self._run_status.text = f"running {seq}"
+
+    def _on_method_changed(self, text, index):
+        """Takes effect on the next Run (flags are read when trail_node starts); a run in
+        progress keeps the method it started with, which FINAL ATE is compared against."""
+        if text not in METHODS:
+            return
+        self._method = text
+        self._hdr_method.text = f"METHOD {text}"
+        self._ref_ate_caption.text = f"REF ATE - {text}"
+        self._update_ref_ate()
+        if self.runner.is_running() and text != self._run_method:
+            self._run_status.text = f"running {self.sequence} ({self._run_method}); {text} on next Run"
 
     def _on_stop_clicked(self):
         self.runner.stop()
@@ -667,7 +695,7 @@ class ViewerApp:
             self._stat_final_ate.text_color = gui.Color(*MUTED)
             return
         self._stat_final_ate.text = f"{ate:.3f} m"
-        key = (self._method, self.sequence)
+        key = (self._run_method, self.sequence)
         if key in self._ref_ate:
             _, _, lo, hi = self._ref_ate[key]
             # green = at least as good as the worst recorded rep (beating the
@@ -810,7 +838,7 @@ def main():
     # Auto-start the sequence passed on the command line (keeps `run_native_viewer.sh
     # Park1` working the same as before); the dropdown + Run button let the user switch
     # to a different sequence afterward without relaunching the whole app.
-    app.runner.start(initial_sequence, start_time=start_time)
+    app.runner.start(initial_sequence, start_time=start_time, method=app._method)
     app._stat_running.text = initial_sequence
     app._set_live(True)
     app._awaiting_final_ate = True
