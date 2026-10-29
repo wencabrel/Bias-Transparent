@@ -24,6 +24,30 @@ REPO_ROOT = '/root/project'  # matches run_native_viewer.sh's container mount
 LIVE_VIZ_DIR = '/root/live_viz'  # mounted from host /tmp/trail_live_viz
 MAX_RANGE = os.environ.get('MAX_RANGE', '150.0')
 
+# Method -> research flags: the same sets as scripts/run_seq.sh's variants of those names
+# (and run_native_viewer.sh's initial-method case); keep the three in sync. A run started
+# from the panel gets exactly the selected method's flags.
+_P = 'TRAIL_RESEARCH_ABLATION_'
+_PROXOBSE = {_P + 'PROX_OBS_GATE': '1', _P + 'RADAR_ELEV_SHRINK': '0.5'}
+METHODS = {
+    'V4': {},                                        # unmodified upstream
+    'PROXOBSE': dict(_PROXOBSE),
+    'PROXOBSEG': {**_PROXOBSE, _P + 'GAMMA_INFO': '1'},
+    # PROXOBSEG + window cap + floor-multipath gate; the only one that completes BikeTunnel2
+    'PROXOBSEGWF': {**_PROXOBSE, _P + 'GAMMA_INFO': '1', _P + 'MAX_WINDOW_S': '1.0',
+                    _P + 'RADAR_MIN_BODY_Z': '0.0'},
+}
+
+
+def method_env(method):
+    """Environment for a trail_node launch with `method`'s flags: this process's own env
+    minus every ablation flag (the launcher exported the *initial* method's flags into
+    the container, which must not leak into a different method chosen later), plus the
+    method's own."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith(_P)}
+    env.update(METHODS[method])
+    return env
+
 
 def _write_config(sequence):
     out_dir_container = f'{LIVE_VIZ_DIR}/{sequence}'
@@ -52,7 +76,8 @@ class SequenceRunner:
         poses.txt is complete and ready for the final-spline evaluation."""
         return self._proc is not None and self._proc.poll() is not None
 
-    def start(self, sequence, start_time=20):
+    def start(self, sequence, start_time=20, method=None):
+        """method: key of METHODS; None keeps this process's environment unchanged."""
         self.stop()
         cfg_path = _write_config(sequence)
         bag_path = f'{REPO_ROOT}/data/Boxi_ros2_sqlite/{sequence}'
@@ -63,6 +88,7 @@ class SequenceRunner:
         ]
         self._proc = subprocess.Popen(
             cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            env=method_env(method) if method else None,
             preexec_fn=os.setsid)  # own process group, so stop() can signal the whole tree
         self.running_sequence = sequence
 
