@@ -326,19 +326,26 @@ def _kpi_card(caption, accent, em):
     return col, value
 
 
-def _load_ref_ate(csv_path):
-    """The benchmark numbers from results/summaries/eval_traj_prism.csv, keyed
-    (variant, sequence) -> (mean_rmse, n_reps, min, max). These come from headless
-    run_seq.sh reps evaluated on the final spline -- the numbers the panel's live
-    and final readouts are compared against."""
-    reps = {}
-    try:
-        with open(csv_path, newline='') as f:
-            for r in csv.DictReader(f):
-                reps.setdefault((r['variant'], r['sequence']), []).append(float(r['ate_rmse']))
-    except (OSError, KeyError, ValueError):
-        return {}
-    return {k: (sum(v) / len(v), len(v), min(v), max(v)) for k, v in reps.items()}
+def _load_ref_ate(csv_paths):
+    """The benchmark numbers from the results/summaries/eval_traj_prism*.csv files,
+    keyed (variant, sequence) -> (mean_rmse, n_reps, min, max). These come from
+    headless run_seq.sh reps evaluated on the final spline -- the numbers the panel's
+    live and final readouts are compared against.
+
+    csv_paths is in increasing priority: a (variant, sequence) present in a later file
+    replaces the earlier file's reps for it (the same ATE recipe, but later runs
+    overwrite earlier ones in results/, so the later file is the current one)."""
+    out = {}
+    for csv_path in csv_paths:
+        reps = {}
+        try:
+            with open(csv_path, newline='') as f:
+                for r in csv.DictReader(f):
+                    reps.setdefault((r['variant'], r['sequence']), []).append(float(r['ate_rmse']))
+        except (OSError, KeyError, ValueError):
+            continue
+        out.update({k: (sum(v) / len(v), len(v), min(v), max(v)) for k, v in reps.items()})
+    return out
 
 
 class ViewerApp:
@@ -357,8 +364,10 @@ class ViewerApp:
         self.aligner = GtAligner(self._gt_path_for(sequence))
         self._gt_drawn_version = -1
         self._method = os.environ.get('TRAIL_VIEWER_METHOD', 'V4')
-        self._ref_ate = _load_ref_ate(os.path.join(
-            repo_root, 'results', 'summaries', 'eval_traj_prism.csv'))
+        summaries = os.path.join(repo_root, 'results', 'summaries')
+        self._ref_ate = _load_ref_ate([
+            os.path.join(summaries, 'eval_traj_prism.csv'),
+            os.path.join(summaries, 'eval_traj_prism_rpepos.csv')])
         self._awaiting_final_ate = False
         self.window = gui.Application.instance.create_window(
             _window_title(sequence), 1400, 900)
@@ -620,7 +629,7 @@ class ViewerApp:
             self._stat_ate.text = f"{mean:.3f} m"
             self._stat_ate.text_color = gui.Color(*INK)
         else:
-            self._stat_ref_ate.text = "-- (no recorded reps for this method)"
+            self._stat_ref_ate.text = "-- (no completed run for this method)"
             self._stat_ate.text = "--"
 
     def _final_ate(self):
