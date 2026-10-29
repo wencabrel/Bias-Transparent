@@ -27,10 +27,11 @@
 #                       (default Park1 -- just the dropdown's starting selection, not a
 #                       hard requirement; pick a different one from the UI any time)
 #   start_time        : seconds into the bag to start from (default 20, matching run_seq.sh)
-#   method            : V4 (default, unmodified upstream) | PROXOBSE | PROXOBSEG -- same
-#                       research flags as scripts/run_seq.sh's variants of those names; they
-#                       are exported into the container, so every run started from the
-#                       panel inherits them.
+#   method            : V4 (default, unmodified upstream) | PROXOBSE | PROXOBSEG |
+#                       PROXOBSEGWF -- same research flags as scripts/run_seq.sh's variants
+#                       of those names; they are exported into the container, so every run
+#                       started from the panel inherits them. PROXOBSEGWF (PROXOBSEG + window
+#                       cap + floor-multipath gate) is the only one that completes BikeTunnel2.
 set -eo pipefail
 
 SEQUENCE="${1:-Park1}"
@@ -40,7 +41,8 @@ case "$METHOD" in
     V4) METHOD_ENV=() ;;
     PROXOBSE) METHOD_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5) ;;
     PROXOBSEG) METHOD_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1) ;;
-    *) echo "unknown method '$METHOD' (expected V4, PROXOBSE or PROXOBSEG)" >&2; exit 1 ;;
+    PROXOBSEGWF) METHOD_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.0) ;;
+    *) echo "unknown method '$METHOD' (expected V4, PROXOBSE, PROXOBSEG or PROXOBSEGWF)" >&2; exit 1 ;;
 esac
 METHOD_DOCKER_ENV=(--env="TRAIL_VIEWER_METHOD=$METHOD")
 for kv in "${METHOD_ENV[@]}"; do METHOD_DOCKER_ENV+=(--env="$kv"); done
