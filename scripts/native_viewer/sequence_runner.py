@@ -46,6 +46,12 @@ class SequenceRunner:
     def is_running(self):
         return self._proc is not None and self._proc.poll() is None
 
+    def finished_naturally(self):
+        """True when the launch exited on its own (bag ended + grace period), as
+        opposed to stop() having killed it -- the viewer uses this to know the run's
+        poses.txt is complete and ready for the final-spline evaluation."""
+        return self._proc is not None and self._proc.poll() is not None
+
     def start(self, sequence, start_time=20):
         self.stop()
         cfg_path = _write_config(sequence)
