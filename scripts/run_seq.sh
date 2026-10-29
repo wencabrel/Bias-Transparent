@@ -275,7 +275,10 @@ docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 
 START_TS="$(date -Is)"
 set +e
+# 8 GB cap: a run that overruns it is killed alone (validation then reports no poses.txt)
+# instead of pushing the desktop session into systemd-oomd kills, as on 2026-10-28.
 docker run --rm -i --ipc=host --net=host \
+    --memory=8g --memory-swap=8g \
     --name "$CONTAINER_NAME" \
     --user root \
     --hostname trail-odom \

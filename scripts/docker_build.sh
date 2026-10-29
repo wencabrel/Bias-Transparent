@@ -11,8 +11,14 @@ set -eo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DATASET_DIR="$REPO_ROOT/data"
 
+# Memory: colcon defaults to one compile job per core (12 here) and state_manager.cpp alone
+# takes a few GB per compiler, which pushed the desktop session into systemd-oomd kills
+# (VS Code, GNOME Shell) on 2026-10-28. MAKEFLAGS=-j4 limits colcon's compile jobs; the
+# container cap makes any overrun fail the build instead of squeezing the desktop.
 docker run --rm -i --ipc=host --net=host \
+    --memory=10g --memory-swap=10g \
     --env="RMW_IMPLEMENTATION=rmw_zenoh_cpp" \
+    --env="MAKEFLAGS=-j4" \
     --name trail_odom_build \
     --user root \
     --hostname trail-odom \
