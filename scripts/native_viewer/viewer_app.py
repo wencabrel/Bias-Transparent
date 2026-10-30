@@ -16,6 +16,7 @@ Usage (inside the trail-odom-native-viewer container, with ROS sourced):
 import csv
 import os
 import sys
+import time
 import numpy as np
 import open3d as o3d
 import open3d.core as o3c
@@ -374,6 +375,10 @@ class ViewerApp:
             os.path.join(summaries, 'eval_traj_prism.csv'),
             os.path.join(summaries, 'eval_traj_prism_rpepos.csv')])
         self._awaiting_final_ate = False
+        self._paused = False
+        self._pause_future = None     # in-flight pause/resume call (rclpy Future)
+        self._pause_target = False    # what that call is asking for
+        self._pause_t0 = 0.0
         self.window = gui.Application.instance.create_window(
             _window_title(sequence), 1400, 900)
         self.window.set_on_layout(self._on_layout)
@@ -419,6 +424,9 @@ class ViewerApp:
         btn_run = _button("Run sequence", self.COLOR_STATS,
                           tooltip="Start the selected sequence with the selected method")
         btn_run.set_on_clicked(self._on_run_clicked)
+        self._btn_pause = _button("Pause", self.COLOR_IMU,
+                                  tooltip="Pause / resume the bag playback (the data and the clock stop together)")
+        self._btn_pause.set_on_clicked(self._on_pause_clicked)
         btn_stop = _button("Stop", self.COLOR_RESET, tooltip="Stop the running sequence")
         btn_stop.set_on_clicked(self._on_stop_clicked)
 
@@ -494,6 +502,7 @@ class ViewerApp:
         panel.add_child(self._method_combo)
         run_row = gui.Horiz(0.5 * em)
         run_row.add_child(btn_run)
+        run_row.add_child(self._btn_pause)
         run_row.add_child(btn_stop)
         panel.add_child(run_row)
         panel.add_child(self._run_status)
@@ -641,7 +650,53 @@ class ViewerApp:
         self._set_live(False)
         self._stat_running.text = "none"
 
+    def _on_pause_clicked(self):
+        if not self.runner.is_running():
+            self._run_status.text = "nothing running to pause"
+            return
+        if self._pause_future is not None:
+            return                      # previous call still in flight
+        want = not self._paused
+        fut = self.bridge.set_player_paused(want)
+        if fut is None:
+            self._run_status.text = "bag player not ready yet -- try again in a moment"
+            return
+        self._pause_future, self._pause_target, self._pause_t0 = fut, want, time.monotonic()
+        self._run_status.text = "pausing..." if want else "resuming..."
+
+    def _poll_pause(self):
+        """Settle the UI from the pause/resume call's result (called every tick)."""
+        fut = self._pause_future
+        if fut is None:
+            return
+        if fut.done():
+            self._pause_future = None
+            if fut.exception() is None:
+                self._set_paused(self._pause_target)
+            else:
+                self._run_status.text = "pause/resume failed"
+        elif time.monotonic() - self._pause_t0 > 3.0:
+            # both calls are idempotent, so pressing the button again is safe
+            self._pause_future = None
+            self._run_status.text = "bag player did not answer -- try again"
+
+    def _set_paused(self, paused):
+        self._paused = paused
+        self._btn_pause.text = "Resume" if paused else "Pause"
+        if paused:
+            self._hdr_status.text = "PAUSED"
+            self._hdr_status.text_color = gui.Color(*AMBER)
+            self._run_status.text = f"paused {self.sequence} -- press Resume to continue"
+        else:
+            self._hdr_status.text = "LIVE"
+            self._hdr_status.text_color = gui.Color(*GREEN)
+            self._run_status.text = f"running {self.sequence}"
+
     def _set_live(self, live):
+        # a run starting, stopping or finishing always leaves the player unpaused
+        self._paused = False
+        self._pause_future = None
+        self._btn_pause.text = "Pause"
         if live:
             self._hdr_status.text = "LIVE"
             self._hdr_status.text_color = gui.Color(*GREEN)
@@ -738,6 +793,7 @@ class ViewerApp:
 
     def _on_tick(self):
         snap = self.bridge.state.snapshot()
+        self._poll_pause()
 
         # Only rebuild geometry when the underlying ROS data actually changed --
         # set_on_tick_event fires every render frame (tens of times/sec), far faster
