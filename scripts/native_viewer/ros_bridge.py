@@ -15,11 +15,18 @@ import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Path, Odometry
 from sensor_msgs.msg import PointCloud2, Imu
+from rosbag2_interfaces.srv import Pause, Resume
 
 # Same for all 6 Boxi sequences, see configs/base/boxi.yaml IMUTopic. Subscribed directly
 # to the raw bag topic (not anything trail_node republishes -- it doesn't publish IMU
 # data itself) so the panel can show genuine live sensor readings.
 IMU_TOPIC = '/gt_box/cpt7/offline_from_novatel_logs/imu'
+
+# `ros2 bag play` (scripts/launch/trail_boxi_headless.launch.py) runs as this node and
+# serves pause/resume. Pausing there stops the bag data and /clock together and resume
+# continues from the same bag time, so trail_node just idles; freezing trail_node itself
+# (SIGSTOP) would instead break its zenoh session and make the player burst to catch up.
+PLAYER_NODE = '/rosbag2_player'
 
 
 class State:
@@ -131,6 +138,8 @@ class _BridgeNode(Node):
         self.create_subscription(Path, path_topic, self._on_path, 10)
         self.create_subscription(Odometry, '/axis', self._on_odom, 10)
         self.create_subscription(Imu, IMU_TOPIC, self._on_imu, 10)
+        self._pause_cli = self.create_client(Pause, PLAYER_NODE + '/pause')
+        self._resume_cli = self.create_client(Resume, PLAYER_NODE + '/resume')
         self._t0 = None
         # /axis's header.stamp comes from trail_node's internal state->timestamp
         # (ws/src/TRaIL-Odom/src/core/trail.cpp:390), which is relative (starts near 0
@@ -205,6 +214,14 @@ class _BridgeNode(Node):
         a = msg.linear_acceleration
         self.state.update_imu((w.x, w.y, w.z), (a.x, a.y, a.z))
 
+    def set_player_paused(self, paused):
+        """Ask the bag player to pause/resume. Returns the rclpy Future of the call, or
+        None if the player's service is not up yet. Both calls are idempotent."""
+        cli = self._pause_cli if paused else self._resume_cli
+        if not cli.service_is_ready():
+            return None
+        return cli.call_async((Pause if paused else Resume).Request())
+
     def reset_for_new_run(self):
         """A new sequence's trail_node restarts its own relative clock from near-zero,
         so the frozen epoch offset from the previous run no longer applies -- must be
@@ -231,6 +248,9 @@ class RosBridge:
 
     def _spin(self):
         rclpy.spin(self._node)
+
+    def set_player_paused(self, paused):
+        return self._node.set_player_paused(paused) if self._node is not None else None
 
     def reset_for_new_run(self):
         self.state.reset()
