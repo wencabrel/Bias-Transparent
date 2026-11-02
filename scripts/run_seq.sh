@@ -26,8 +26,8 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 case "$VARIANT" in
-    V4|V0|V0P|V1|V2|V3|V5|V6|V7|CAL|CALP|CALROB|CALROBP|HARD|SOFT|NUIS|OURS|HARD4|SOFT4|NUIS4|OURS4|CAL4|RADARFIX|ROB4|PROXOBS|PROXOBS2|RCOND|PROXOBSC|PAPERN|PROXOBSN|ELEV|PROXOBSE|ELEVB|PROXOBSEB|PROXOBSEBG|PROXOBSEG|PLANERES|RADARMAP|SOLVCAP|WINCAP|PROXOBSEW|PROXOBSEGW|PROXOBSEWA|PROXOBSEGWA|PROXOBSEWF|PROXOBSEGWF) BASE_CFG="$REPO_ROOT/configs/base/boxi.yaml" ;;
-    *) echo "unknown variant '$VARIANT' (expected one of V0,V0P,V1,V2,V3,V4,V5,V6,V7,CAL,CALP,CALROB,CALROBP,HARD,SOFT,NUIS,OURS,HARD4,SOFT4,NUIS4,OURS4,CAL4,RADARFIX,ROB4,PROXOBS,PROXOBS2,RCOND,PROXOBSC,PAPERN,PROXOBSN,ELEV,PROXOBSE,ELEVB,PROXOBSEB,PROXOBSEBG,PROXOBSEG,PLANERES,RADARMAP,SOLVCAP,WINCAP,PROXOBSEW,PROXOBSEGW,PROXOBSEWA,PROXOBSEGWA,PROXOBSEWF,PROXOBSEGWF)" >&2; exit 1 ;;
+    V4|V0|V0P|V1|V2|V3|V5|V6|V7|CAL|CALP|CALROB|CALROBP|HARD|SOFT|NUIS|OURS|HARD4|SOFT4|NUIS4|OURS4|CAL4|RADARFIX|ROB4|PROXOBS|PROXOBS2|RCOND|PROXOBSC|PAPERN|PROXOBSN|ELEV|PROXOBSE|ELEVB|PROXOBSEB|PROXOBSEBG|PROXOBSEG|PLANERES|RADARMAP|SOLVCAP|WINCAP|PROXOBSEW|PROXOBSEGW|PROXOBSEWA|PROXOBSEGWA|PROXOBSEWF|PROXOBSEGWF|PROXOBSW|PROXOBSGW|PROXOBSGWF|PROXOBSEGF|PROXOBSEGWF_NOGAIN|PROXOBSEGWF_PRIORALWAYS|PROXOBSEGWF_PRIORNEVER|PROXOBSEGWF_L075|PROXOBSEGWF_L025|PROXOBSEGWF_HMN02|PROXOBSEGWF_HMP02|PROXOBSEGWF_W05|PROXOBSEGWF_W20|REF|PROXOBSEGWF_DOWN|PROXOBSEGWR) BASE_CFG="$REPO_ROOT/configs/base/boxi.yaml" ;;
+    *) echo "unknown variant '$VARIANT' (expected one of V0,V0P,V1,V2,V3,V4,V5,V6,V7,CAL,CALP,CALROB,CALROBP,HARD,SOFT,NUIS,OURS,HARD4,SOFT4,NUIS4,OURS4,CAL4,RADARFIX,ROB4,PROXOBS,PROXOBS2,RCOND,PROXOBSC,PAPERN,PROXOBSN,ELEV,PROXOBSE,ELEVB,PROXOBSEB,PROXOBSEBG,PROXOBSEG,PLANERES,RADARMAP,SOLVCAP,WINCAP,PROXOBSEW,PROXOBSEGW,PROXOBSEWA,PROXOBSEGWA,PROXOBSEWF,PROXOBSEGWF,PROXOBSW,PROXOBSGW,PROXOBSGWF,PROXOBSEGF,PROXOBSEGWF_NOGAIN,PROXOBSEGWF_PRIORALWAYS,PROXOBSEGWF_PRIORNEVER,PROXOBSEGWF_L075,PROXOBSEGWF_L025,PROXOBSEGWF_HMN02,PROXOBSEGWF_HMP02,PROXOBSEGWF_W05,PROXOBSEGWF_W20,REF,PROXOBSEGWF_DOWN,PROXOBSEGWR)" >&2; exit 1 ;;
 esac
 
 # Phase 2 ablation mapping (Part D.1/H Phase 2). V4 (upstream) leaves every
@@ -52,6 +52,55 @@ case "$VARIANT" in
     # 2026-10-29 floor-multipath gate (AblationConfig::RadarMinBodyHeight = 0.0 m, the IMU plane).
     PROXOBSEWF) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.0) ;;
     PROXOBSEGWF) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.0) ;;
+    # 2026-11-01 paper tab:abl-inc (incremental attribution, isolated steps -- none of
+    # these had been run before: every existing variant bundles PROX_OBS_GATE with
+    # RADAR_ELEV_SHRINK from the first step on (PROXOBSE), so the cumulative order
+    # V4 -> +window cap -> +gated prior -> +scale-free gain -> +elev shrink (=Ours-W)
+    # the draft table asks for had three never-run intermediate cells.
+    PROXOBSW) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0) ;;
+        # WINCAP + gated prior, no elev shrink, no scale-free gain. abl-inc step 2.
+    PROXOBSGW) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0) ;;
+        # + scale-free gain, still no elev shrink. abl-inc step 3; step 4 (+elev shrink)
+        # is exactly PROXOBSEGW (=Ours-W), already run.
+    # 2026-11-01 paper tab:abl-loo (leave-one-out from Ours-F=PROXOBSEGWF) and tab:sens.
+    PROXOBSGWF) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.0) ;;
+        # Ours-F minus RadarElevShrink (lambda=1, i.e. no elevation correction). Fills
+        # tab:abl-loo's "-regression-calibrated Doppler" row and tab:sens's lambda=1.0 cell.
+    PROXOBSEGF) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.0) ;;
+        # Ours-F minus MaxWindowS (no cap at all). Fills tab:abl-loo's "-window cap" row
+        # and tab:sens's w_max=off cell.
+    PROXOBSEGWF_NOGAIN) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.0 TRAIL_RESEARCH_ABLATION_ALPHA=0 TRAIL_RESEARCH_ABLATION_GAMMA=0) ;;
+        # Ours-F with EnableAlphaReweight and EnableGammaReweight both off (state_manager.cpp
+        # :1769,1831): radar_weight never leaves its 1.0 init, i.e. kappa_i=1 everywhere,
+        # with the measurement-level corrections (elev shrink, floor gate, window cap) still
+        # applied. Fills tab:abl-loo's "-gain altogether" row.
+    PROXOBSEGWF_PRIORALWAYS) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.0) ;;
+        # Ours-F without FixRadarProxObservabilityGate: EnableRadarProx stays at its upstream
+        # default (true), so the prior fires whenever degenerate_dim>0 regardless of whether
+        # radar already observes the weak direction (state_manager.cpp:1919-1920) -- "always
+        # fire". Fills tab:abl-loo's "-gated prior (always fire)" row.
+    PROXOBSEGWF_PRIORNEVER) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.0 TRAIL_RESEARCH_ABLATION_PROX=0) ;;
+        # Ours-F with EnableRadarProx=0: the prior never fires (state_manager.cpp:1920 gates
+        # on EnableRadarProx first). Fills tab:abl-loo's "-gated prior (never fire)" row.
+    PROXOBSEGWF_L075) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.75 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.0) ;;
+    PROXOBSEGWF_L025) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.25 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.0) ;;
+        # tab:sens lambda in {0.75,0.25}, all other constants at their Ours-F values.
+    PROXOBSEGWF_HMN02) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=-0.2) ;;
+    PROXOBSEGWF_HMP02) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.2) ;;
+        # tab:sens h_min in {-0.2,+0.2} m, all other constants at their Ours-F values.
+    PROXOBSEGWF_W05) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=0.5 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.0) ;;
+    PROXOBSEGWF_W20) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=2.0 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.0) ;;
+        # tab:sens w_max in {0.5,2.0} s, all other constants at their Ours-F values.
+    # 2026-11-02 paper tab:diag reference: fixed-weight trajectory (alpha/gamma reweighting off,
+    # as V0P) for the ground-truth-free radar diagnostic (scripts/radar_diag.py). The window cap
+    # is added only so BikeTunnel2 produces a trajectory; it never engages elsewhere.
+    REF) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_ALPHA=0 TRAIL_RESEARCH_ABLATION_GAMMA=0 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0) ;;
+    # 2026-11-02 paper tab:mech, regression-calibrated Doppler (b): Ours-F with the shrink replaced
+    # by AblationConfig::RadarElevDown (same lambda^2 vertical information, no mean rescaling).
+    PROXOBSEGWF_DOWN) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_DOWN=1 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0 TRAIL_RESEARCH_ABLATION_RADAR_MIN_BODY_Z=0.0) ;;
+    # 2026-11-02 paper tab:mech, floor gate (b): Ours-W with the Cauchy robust Doppler loss
+    # (CalibrationConfig::EnableRobustDopplerLoss, c=2 whitened) instead of the height gate.
+    PROXOBSEGWR) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_PROX_OBS_GATE=1 TRAIL_RESEARCH_ABLATION_RADAR_ELEV_SHRINK=0.5 TRAIL_RESEARCH_ABLATION_GAMMA_INFO=1 TRAIL_RESEARCH_ABLATION_MAX_WINDOW_S=1.0 TRAIL_RESEARCH_CALIBRATION_ROB=1) ;;
     RADARFIX) ABLATION_ENV=(TRAIL_RESEARCH_ABLATION_RADAR_FILTER_FIX=1) ;;
         # V4 + AblationConfig::FixRadarFilterFallback (research_config.h, added 2026-10-16
         # investigating Airfield1's ~2x gap vs the paper). Everything else stays at upstream
@@ -231,7 +280,11 @@ done
 # single-threaded rclcpp executor removes IMU/LiDAR/Radar callback reordering as a source
 # of run-to-run variance. Opt-in via env var upstream default is multi-threaded; combined
 # with tbb::parallel_deterministic_reduce (compiled in, no flag) in BuildLinearSystem.
-ABLATION_ENV+=(TRAIL_RESEARCH_SINGLE_THREADED_EXECUTOR=1)
+# Boxi only: every GaRLILEO run in results/explore_garlileo/ was made without it.
+case "$SEQUENCE" in
+    Downstair|CorriLoop|BiCorridor|SlopeStair|Tunnel|Overpass|Quad) ;;
+    *) ABLATION_ENV+=(TRAIL_RESEARCH_SINGLE_THREADED_EXECUTOR=1) ;;
+esac
 
 ABLATION_EXPORTS=""
 FLAGS_JSON="{"
@@ -244,17 +297,33 @@ done
 FLAGS_JSON="${FLAGS_JSON}}"
 FLAGS_JSON="$(echo "$FLAGS_JSON" | sed 's/,}/}/')"
 
-BAG_DIR="$REPO_ROOT/data/Boxi_ros2_sqlite/$SEQUENCE"
+# GaRLILEO sequences use upstream's own GaRLILEO config, bag start 0 s, and write under
+# results/explore_garlileo/ (where every earlier GaRLILEO run lives); Boxi is unchanged.
+case "$SEQUENCE" in
+    Downstair|CorriLoop|BiCorridor|SlopeStair|Tunnel|Overpass|Quad)
+        BASE_CFG="$REPO_ROOT/ws/src/TRaIL-Odom/dataset/GaRLILEO/config.yaml"
+        CFG_OUT_PLACEHOLDER="/tmp/trail_results/GaRLILEO"
+        BAG_REL="data/GaRLILEO/$SEQUENCE"
+        OUT_REL="results/explore_garlileo/$VARIANT/$SEQUENCE/rep$REP"
+        BAG_START=0 ;;
+    *)
+        CFG_OUT_PLACEHOLDER="/tmp/trail_results/Boxi"
+        BAG_REL="data/Boxi_ros2_sqlite/$SEQUENCE"
+        OUT_REL="results/$VARIANT/$SEQUENCE/rep$REP"
+        BAG_START=20 ;;
+esac
+
+BAG_DIR="$REPO_ROOT/$BAG_REL"
 if [ ! -d "$BAG_DIR" ]; then
     echo "missing $BAG_DIR -- run scripts/convert_boxi_bags.py $SEQUENCE first" >&2
     exit 1
 fi
 
-OUT_DIR="$REPO_ROOT/results/$VARIANT/$SEQUENCE/rep$REP"
+OUT_DIR="$REPO_ROOT/$OUT_REL"
 mkdir -p "$OUT_DIR"
 CFG_PATH="$OUT_DIR/config.yaml"
-OUT_DIR_CONTAINER="/root/project/results/$VARIANT/$SEQUENCE/rep$REP"
-sed "s|OutputPath: /tmp/trail_results/Boxi|OutputPath: $OUT_DIR_CONTAINER|" "$BASE_CFG" > "$CFG_PATH"
+OUT_DIR_CONTAINER="/root/project/$OUT_REL"
+sed "s|OutputPath: $CFG_OUT_PLACEHOLDER|OutputPath: $OUT_DIR_CONTAINER|" "$BASE_CFG" > "$CFG_PATH"
 
 # OURS/OURS4 diagnostic: per-window profile-likelihood sigma_amb CSV (window_end_time,
 # axis, sigma_amb, unbounded) -- the only visibility into real sigma_amb values, since
@@ -269,6 +338,10 @@ esac
 # (one CSV row per window).
 ABLATION_EXPORTS="${ABLATION_EXPORTS}export TRAIL_RESEARCH_SCAN_LOG_PATH=${OUT_DIR_CONTAINER}/scan_log.csv
 "
+# Per-window wall-clock cost (research::WindowLogger): one row per completed window, read by
+# scripts/analyze_rt.py for tab:rt. Logging only.
+ABLATION_EXPORTS="${ABLATION_EXPORTS}export TRAIL_RESEARCH_WINDOW_LOG_PATH=${OUT_DIR_CONTAINER}/window_log.csv
+"
 
 CONTAINER_NAME="trail_odom_run_${VARIANT}_${SEQUENCE}_${REP}"
 docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
@@ -277,7 +350,7 @@ START_TS="$(date -Is)"
 set +e
 # 8 GB cap: a run that overruns it is killed alone (validation then reports no poses.txt)
 # instead of pushing the desktop session into systemd-oomd kills, as on 2026-10-28.
-docker run --rm -i --ipc=host --net=host \
+docker run --rm -i \
     --memory=8g --memory-swap=8g \
     --name "$CONTAINER_NAME" \
     --user root \
@@ -297,8 +370,8 @@ sleep 3
 
 timeout 900 ros2 launch /root/project/scripts/launch/trail_boxi_headless.launch.py \
     config_path:='"$OUT_DIR_CONTAINER"'/config.yaml \
-    rosbag_path:=/root/project/data/Boxi_ros2_sqlite/'"$SEQUENCE"' \
-    start_time:=20 grace_period:=120
+    rosbag_path:=/root/project/'"$BAG_REL"' \
+    start_time:='"$BAG_START"' grace_period:=120
 EXIT=$?
 kill $ZENOHD_PID 2>/dev/null || true
 exit $EXIT
