@@ -15,3 +15,14 @@ __pycache__/
 *.bag
 *.db3
 *.mcap
+
+# Paper figure generation (scripts/paper_figures/) and its output (figures/) -- generated
+# from results/, like everything under results/ itself: never commit.
+scripts/paper_figures/
+figures/
+
+# Paper draft and downloaded reference PDFs: not part of this repo's version-controlled
+# research record.
+docs/paper_latex/
+docs/paper_latex.zip
+docs/*.pdf
