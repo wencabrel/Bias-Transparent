@@ -73,57 +73,107 @@ def kappa_str(kappa):
     return str(int(kappa)) if float(kappa) == int(kappa) else str(kappa)
 
 
-def omega_hat_for_kappa(seq, kappa, rep, R_RtoB, p_RinB):
-    base_d = run_dir(f'P3BASE{kappa_str(kappa)}', seq, rep)
-    bias_d = run_dir(f'P3BIAS{kappa_str(kappa)}', seq, rep)
-    if not (base_d / 'trail_output' / 'poses.txt').exists() or not (bias_d / 'trail_output' / 'poses.txt').exists():
+def pass_through(dir_a, dir_b, R_RtoB, p_RinB):
+    """Per-sample fraction of the radar-only forward bias that reaches the estimate.
+    The injected model makes the radar-only forward velocity v_x/(1+eps), a bias
+    b_x = -eps/(1+eps) v_x, so omega = (v_b_x - v_a_x)/b_x = -(1+eps)(v_b_x - v_a_x)/(eps v_a_x).
+    Degenerate windows of run a only, |v_a_x| > 0.3 m/s. Also used for the null control
+    (two unbiased runs), where the same statistic should be ~0."""
+    if not (dir_a / 'trail_output' / 'poses.txt').exists() or not (dir_b / 'trail_output' / 'poses.txt').exists():
         return None
-    tb, pb, qb = D.load_pose_file(base_d / 'trail_output' / 'poses.txt')
-    ts = tb[(tb > tb[0] + 2) & (tb < tb[-1] - 2)][::5]  # subsample, skip start/end transients
-    v_base, _ = radar_fwd_vel(base_d, R_RtoB, p_RinB, ts)
-    v_bias, _ = radar_fwd_vel(bias_d, R_RtoB, p_RinB, ts)
-    deg = degenerate_mask(base_d / 'scan_log.csv', ts)
-    ok = deg & np.isfinite(v_base) & np.isfinite(v_bias) & (np.abs(v_base) > 0.3)
-    omega = (v_bias[ok] - v_base[ok]) / (EPS * v_base[ok])
-    return omega
+    ta, _, _ = D.load_pose_file(dir_a / 'trail_output' / 'poses.txt')
+    ts = ta[(ta > ta[0] + 2) & (ta < ta[-1] - 2)][::5]  # subsample, skip start/end transients
+    v_a, _ = radar_fwd_vel(dir_a, R_RtoB, p_RinB, ts)
+    v_b, _ = radar_fwd_vel(dir_b, R_RtoB, p_RinB, ts)
+    deg = degenerate_mask(dir_a / 'scan_log.csv', ts)
+    ok = deg & np.isfinite(v_a) & np.isfinite(v_b) & (np.abs(v_a) > 0.3)
+    return -(1 + EPS) * (v_b[ok] - v_a[ok]) / (EPS * v_a[ok])
+
+
+def omega_model(kappa, s):
+    return kappa * s / (1 - s + kappa * s)
+
+
+def fit_s(kappas, omegas):
+    """One-parameter least-squares fit of s in (0,1) on a fine grid."""
+    grid = np.linspace(1e-5, 0.999, 20000)
+    k = np.asarray(kappas)[:, None]
+    sse = ((omega_model(k, grid[None, :]) - np.asarray(omegas)[:, None]) ** 2).sum(0)
+    return float(grid[np.argmin(sse)])
+
+
+def boot_median_ci(x, rng, n=1000):
+    m = [np.median(rng.choice(x, len(x))) for _ in range(n)]
+    return float(np.percentile(m, 2.5)), float(np.percentile(m, 97.5))
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--kappas', type=float, nargs='+', default=[1, 3, 10, 30, 100])
-    ap.add_argument('--reps', type=int, nargs='+', default=[1, 2, 3])
+    ap.add_argument('--reps', type=int, nargs='+', default=[1])
     ap.add_argument('--sequences', nargs='+', default=GARLILEO)
+    ap.add_argument('--null-kappas', type=float, nargs='*', default=[1, 100])
     args = ap.parse_args()
+    rng = np.random.default_rng(0)
 
-    results = {}
-    for seq in args.sequences:
-        R_RtoB, p_RinB, _ = D.load_extrinsics(seq)
-        for kappa in args.kappas:
+    pooled, per_seq = {}, {}
+    for kappa in args.kappas:
+        allv = []
+        for seq in args.sequences:
+            R_RtoB, p_RinB, _ = D.load_extrinsics(seq)
             vals = []
             for rep in args.reps:
-                o = omega_hat_for_kappa(seq, kappa, rep, R_RtoB, p_RinB)
+                o = pass_through(run_dir(f'P3BASE{kappa_str(kappa)}', seq, rep),
+                                 run_dir(f'P3BIAS{kappa_str(kappa)}', seq, rep), R_RtoB, p_RinB)
                 if o is not None and len(o):
                     vals.append(o)
             if vals:
-                pooled = np.concatenate(vals)
-                results[(seq, kappa)] = (float(np.median(pooled)), len(pooled))
-                print(f'{seq:12s} kappa={kappa:6g}  omega_hat median={np.median(pooled):+.3f}  '
-                      f'(IQR {np.percentile(pooled,25):+.3f}..{np.percentile(pooled,75):+.3f}, n={len(pooled)})')
-            else:
-                print(f'{seq:12s} kappa={kappa:6g}  NO DATA')
+                v = np.concatenate(vals); allv.append(v)
+                per_seq[(seq, kappa)] = (float(np.median(v)), len(v))
+        if allv:
+            pooled[kappa] = np.concatenate(allv)
 
-    print('\n--- formula check (s calibrated from kappa=1) ---')
+    print('per sequence: median omega_hat (n samples)')
     for seq in args.sequences:
-        if (seq, 1) not in results:
-            continue
-        s_hat = results[(seq, 1)][0]
-        print(f'{seq:12s} s_hat (from kappa=1) = {s_hat:+.3f}')
-        for kappa in args.kappas:
-            if kappa == 1 or (seq, kappa) not in results:
-                continue
-            pred = kappa * s_hat / (1 - s_hat + kappa * s_hat)
-            meas = results[(seq, kappa)][0]
-            print(f'    kappa={kappa:6g}  predicted omega={pred:+.3f}  measured={meas:+.3f}  diff={meas-pred:+.3f}')
+        print(f'  {seq:12s} ' + '  '.join(
+            f'k={kappa_str(k)}: {per_seq[(seq, k)][0]:+.3f} ({per_seq[(seq, k)][1]})' if (seq, k) in per_seq
+            else f'k={kappa_str(k)}: --' for k in args.kappas))
+
+    print('\npooled over sequences')
+    med = {}
+    for k, v in pooled.items():
+        med[k] = float(np.median(v)); lo, hi = boot_median_ci(v, rng)
+        print(f'  kappa={kappa_str(k):>5s}  median omega_hat {med[k]:+.3f}  95% CI [{lo:+.3f}, {hi:+.3f}]  n={len(v)}')
+
+    null = []
+    for k in args.null_kappas:
+        allv = []
+        for seq in args.sequences:
+            R_RtoB, p_RinB, _ = D.load_extrinsics(seq)
+            o = pass_through(run_dir(f'P3BASE{kappa_str(k)}', seq, 1),
+                             run_dir(f'P3BASE{kappa_str(k)}', seq, 2), R_RtoB, p_RinB)
+            if o is not None and len(o):
+                allv.append(o)
+        if allv:
+            v = np.concatenate(allv); null.append(abs(float(np.median(v))))
+            lo, hi = boot_median_ci(v, rng)
+            print(f'  NULL (BASE rep1 vs rep2) kappa={kappa_str(k):>5s}  median {np.median(v):+.3f}  95% CI [{lo:+.3f}, {hi:+.3f}]  n={len(v)}')
+
+    ks = [k for k in args.kappas if k in med]
+    if len(ks) >= 2:
+        s = fit_s(ks, [med[k] for k in ks])
+        res = [med[k] - omega_model(k, s) for k in ks]
+        print(f'\none-parameter fit: s = {s:.4f}')
+        for k, r in zip(ks, res):
+            print(f'  kappa={kappa_str(k):>5s}  measured {med[k]:+.3f}  model {omega_model(k, s):+.3f}  residual {r:+.3f}')
+        mono = all(med[ks[i + 1]] > med[ks[i]] for i in range(len(ks) - 1))
+        print('\npre-registered criterion (docs/DECISIONS.md 2026-11-05):')
+        print(f'  (a) monotone increase over kappa: {mono}')
+        if null and 100 in med:
+            print(f'  (b) omega(100) = {med[100]:+.3f} > 3 x max|null| = {3 * max(null):.3f}: {med[100] > 3 * max(null)}')
+        else:
+            print('  (b) not evaluable (null control or kappa=100 missing)')
+        print(f'  (c) max |residual| = {max(abs(r) for r in res):.3f} <= 0.1: {max(abs(r) for r in res) <= 0.1}')
 
 
 if __name__ == '__main__':
