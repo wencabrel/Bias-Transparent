@@ -1,4 +1,7 @@
 CLAUDE.md
+# Internal planning/process notes kept directly under docs/ (not docs/reports/,
+# which stays tracked): private, never version-controlled.
+docs/*.md
 data/
 results/*
 !results/summaries/
