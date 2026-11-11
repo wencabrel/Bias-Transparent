@@ -18,7 +18,10 @@ import os
 import signal
 import subprocess
 
-SEQUENCES = ['Airfield1', 'Airfield2', 'BikeTunnel1', 'BikeTunnel2', 'Park1', 'Park2']
+BOXI_SEQUENCES = ['Airfield1', 'Airfield2', 'BikeTunnel1', 'BikeTunnel2', 'Park1', 'Park2']
+# Same 7 sequences and order as scripts/run_seq.sh's GaRLILEO case (line ~319).
+GARLILEO_SEQUENCES = ['Downstair', 'CorriLoop', 'BiCorridor', 'SlopeStair', 'Tunnel', 'Overpass', 'Quad']
+SEQUENCES = BOXI_SEQUENCES + GARLILEO_SEQUENCES
 
 REPO_ROOT = '/root/project'  # matches run_native_viewer.sh's container mount
 LIVE_VIZ_DIR = '/root/live_viz'  # mounted from host /tmp/trail_live_viz
@@ -53,10 +56,20 @@ def _write_config(sequence):
     out_dir_container = f'{LIVE_VIZ_DIR}/{sequence}'
     os.makedirs(out_dir_container, exist_ok=True)
     cfg_path = f'{out_dir_container}/config.yaml'
-    with open(f'{REPO_ROOT}/configs/base/boxi.yaml') as f:
+    # Dataset-specific base config + its own upstream OutputPath/MaxRange placeholders,
+    # same pairing as scripts/run_seq.sh (BASE_CFG/CFG_OUT_PLACEHOLDER, line ~318-329).
+    if sequence in GARLILEO_SEQUENCES:
+        base_cfg = f'{REPO_ROOT}/ws/src/TRaIL-Odom/dataset/GaRLILEO/config.yaml'
+        out_placeholder = 'OutputPath: /tmp/trail_results/GaRLILEO'
+        maxrange_placeholder = 'MaxRange: 100.0'
+    else:
+        base_cfg = f'{REPO_ROOT}/configs/base/boxi.yaml'
+        out_placeholder = 'OutputPath: /tmp/trail_results/Boxi'
+        maxrange_placeholder = 'MaxRange: 300.0'
+    with open(base_cfg) as f:
         text = f.read()
-    text = text.replace('OutputPath: /tmp/trail_results/Boxi', f'OutputPath: {out_dir_container}')
-    text = text.replace('MaxRange: 300.0', f'MaxRange: {MAX_RANGE}')
+    text = text.replace(out_placeholder, f'OutputPath: {out_dir_container}')
+    text = text.replace(maxrange_placeholder, f'MaxRange: {MAX_RANGE}')
     with open(cfg_path, 'w') as f:
         f.write(text)
     return cfg_path
@@ -77,10 +90,17 @@ class SequenceRunner:
         return self._proc is not None and self._proc.poll() is not None
 
     def start(self, sequence, start_time=20, method=None):
-        """method: key of METHODS; None keeps this process's environment unchanged."""
+        """method: key of METHODS; None keeps this process's environment unchanged.
+        GaRLILEO sequences always start at bag time 0 (scripts/run_seq.sh's BAG_START=0
+        for that dataset, line ~324) -- start_time is ignored for them regardless of
+        what the caller passed in, same as the headless runs behind results/explore_garlileo."""
         self.stop()
         cfg_path = _write_config(sequence)
-        bag_path = f'{REPO_ROOT}/data/Boxi_ros2_sqlite/{sequence}'
+        if sequence in GARLILEO_SEQUENCES:
+            bag_path = f'{REPO_ROOT}/data/GaRLILEO/{sequence}'
+            start_time = 0
+        else:
+            bag_path = f'{REPO_ROOT}/data/Boxi_ros2_sqlite/{sequence}'
         cmd = [
             'ros2', 'launch', f'{REPO_ROOT}/scripts/launch/trail_boxi_headless.launch.py',
             f'config_path:={cfg_path}', f'rosbag_path:={bag_path}',

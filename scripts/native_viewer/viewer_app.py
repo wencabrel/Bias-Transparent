@@ -25,7 +25,7 @@ import open3d.visualization.rendering as rendering
 
 from ros_bridge import RosBridge
 from gt_tools import GtAligner, load_gt_tum, load_prism_lever, quat_to_rot, kabsch
-from sequence_runner import SequenceRunner, SEQUENCES, METHODS, LIVE_VIZ_DIR
+from sequence_runner import SequenceRunner, SEQUENCES, GARLILEO_SEQUENCES, METHODS, LIVE_VIZ_DIR
 
 AGE_MAX_S = 40.0  # seconds; matches the drift-crossover measurement in run_live_rviz.sh
 
@@ -373,7 +373,10 @@ class ViewerApp:
         summaries = os.path.join(repo_root, 'results', 'summaries')
         self._ref_ate = _load_ref_ate([
             os.path.join(summaries, 'eval_traj_prism.csv'),
-            os.path.join(summaries, 'eval_traj_prism_rpepos.csv')])
+            os.path.join(summaries, 'eval_traj_prism_rpepos.csv'),
+            # GaRLILEO has no lever-arm correction (see _gt_path_for), so its ATE lives in
+            # its own summary rather than the eval_traj_prism* files above.
+            os.path.join(repo_root, 'results', 'explore_garlileo', 'summary_garlileo.csv')])
         self._awaiting_final_ate = False
         self._paused = False
         self._pause_future = None     # in-flight pause/resume call (rclpy Future)
@@ -596,6 +599,13 @@ class ViewerApp:
         self.window.set_on_tick_event(self._on_tick)
 
     def _gt_path_for(self, sequence):
+        # GaRLILEO GT is already TUM-formatted and used directly by this project's own
+        # scripts (e.g. scripts/radar_diag.py:157, scripts/paper_figures/figure10.py:49)
+        # -- no lever-arm meta.json, no separate results/summaries/gt copy; gt_tools.py's
+        # load_prism_lever() already treats a missing .meta.json as "no lever arm" so
+        # GtAligner compares against the raw body-frame GT, same as eval_traj.py does here.
+        if sequence in GARLILEO_SEQUENCES:
+            return os.path.join(self.repo_root, "data", "GaRLILEO", "GT_Trajectory", f"{sequence}_gt.txt")
         return os.path.join(self.repo_root, "results", "summaries", "gt", f"{sequence}_gt.tum")
 
     def _on_run_clicked(self):
