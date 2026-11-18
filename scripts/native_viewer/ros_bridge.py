@@ -17,10 +17,12 @@ from nav_msgs.msg import Path, Odometry
 from sensor_msgs.msg import PointCloud2, Imu
 from rosbag2_interfaces.srv import Pause, Resume
 
-# Same for all 6 Boxi sequences, see configs/base/boxi.yaml IMUTopic. Subscribed directly
-# to the raw bag topic (not anything trail_node republishes -- it doesn't publish IMU
-# data itself) so the panel can show genuine live sensor readings.
-IMU_TOPIC = '/gt_box/cpt7/offline_from_novatel_logs/imu'
+# IMUTopic of configs/base/boxi.yaml (all 6 Boxi sequences) and of upstream's
+# dataset/GaRLILEO/config.yaml (all 7 GaRLILEO sequences); a bag carries only one of them.
+# Subscribed directly to the raw bag topic (not anything trail_node republishes -- it
+# doesn't publish IMU data itself) so the panel can show genuine live sensor readings.
+# Both carry epoch stamps on the same clock as their dataset's GT file.
+IMU_TOPICS = ('/gt_box/cpt7/offline_from_novatel_logs/imu', '/imu')
 
 # `ros2 bag play` (scripts/launch/trail_boxi_headless.launch.py) runs as this node and
 # serves pause/resume. Pausing there stops the bag data and /clock together and resume
@@ -137,7 +139,8 @@ class _BridgeNode(Node):
         self.create_subscription(PointCloud2, cloud_topic, self._on_cloud, 10)
         self.create_subscription(Path, path_topic, self._on_path, 10)
         self.create_subscription(Odometry, '/axis', self._on_odom, 10)
-        self.create_subscription(Imu, IMU_TOPIC, self._on_imu, 10)
+        for topic in IMU_TOPICS:
+            self.create_subscription(Imu, topic, self._on_imu, 10)
         self._pause_cli = self.create_client(Pause, PLAYER_NODE + '/pause')
         self._resume_cli = self.create_client(Resume, PLAYER_NODE + '/resume')
         self._t0 = None

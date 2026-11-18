@@ -30,19 +30,44 @@ from sequence_runner import SequenceRunner, SEQUENCES, GARLILEO_SEQUENCES, METHO
 AGE_MAX_S = 40.0  # seconds; matches the drift-crossover measurement in run_live_rviz.sh
 
 
+AGE_FRESH_RGB = np.array([0.30, 0.90, 0.45], dtype=np.float32)
+AGE_OLD_RGB = np.array([0.30, 0.30, 0.32], dtype=np.float32)
+
+# Low -> high. No magenta/cyan stops: those mean GT and the estimate elsewhere. Kept
+# saturated (not pastel) at every stop so the 4 bands stay visually distinct even though
+# height_to_rgb() below always spreads points across all of them by rank -- an earlier
+# blue/green/sand/near-white version put 3 of 4 stops at similarly high lightness, which
+# still read as "mostly one pale color" at a glance despite using the full color range.
+HEIGHT_STOPS = np.array([
+    [0.15, 0.35, 0.95],
+    [0.10, 0.75, 0.55],
+    [0.95, 0.65, 0.10],
+    [0.90, 0.15, 0.20],
+], dtype=np.float32)
+
+
 def age_to_rgb(ages):
-    """Green (fresh) -> yellow -> red (old/likely drifted). Same gradient formula as
-    lightning-lm's UiCloud::SetCloudWithUncertainty (src/ui/ui_cloud.cc:74-83):
-    u<0.5: (t, 0.8, 0.2*(1-t)); u>=0.5: (1, 0.8*(1-t), 0) -- ported directly rather than
-    reusing our own earlier blue->red scheme, since the point was to match theirs."""
-    u = np.clip(np.asarray(ages, dtype=np.float32) / AGE_MAX_S, 0.0, 1.0)
-    out = np.empty((len(u), 3), dtype=np.float32)
-    lo = u < 0.5
-    t_lo = u[lo] * 2.0
-    out[lo] = np.stack([t_lo, np.full_like(t_lo, 0.8), 0.2 * (1.0 - t_lo)], axis=1)
-    t_hi = (u[~lo] - 0.5) * 2.0
-    out[~lo] = np.stack([np.ones_like(t_hi), 0.8 * (1.0 - t_hi), np.zeros_like(t_hi)], axis=1)
-    return out
+    """Fresh points bright green, fading linearly to dim gray by AGE_MAX_S. Old points
+    recede instead of saturating to red, so a finished run stays readable."""
+    u = np.clip(np.asarray(ages, dtype=np.float32) / AGE_MAX_S, 0.0, 1.0)[:, None]
+    return (1.0 - u) * AGE_FRESH_RGB + u * AGE_OLD_RGB
+
+
+def height_to_rgb(points):
+    """z mapped by rank (histogram-equalized), not by raw value: most real scenes --
+    especially indoor corridors -- have most points packed into a narrow slice of the
+    full z range (floor/ceiling outliers aside), so a straight min-max or percentile
+    linear map puts nearly everything in one or two color stops. Ranking first spreads
+    points evenly across all 4 stops regardless of how flat or how tall the scene is,
+    trading "color = absolute height" for "color = relative position in this cloud"."""
+    z = np.asarray(points, dtype=np.float32)[:, 2]
+    n = len(z)
+    rank = np.empty(n, dtype=np.float32)
+    rank[np.argsort(z)] = np.arange(n, dtype=np.float32)
+    u = (rank / max(n - 1, 1)) * (len(HEIGHT_STOPS) - 1)
+    i = np.minimum(u.astype(np.int32), len(HEIGHT_STOPS) - 2)
+    f = (u - i)[:, None]
+    return (1.0 - f) * HEIGHT_STOPS[i] + f * HEIGHT_STOPS[i + 1]
 
 
 class PointCloudView:
@@ -61,6 +86,13 @@ class PointCloudView:
         self._scene = scene
         self._point_size = 3.0
         self._present = False
+        self._mode = "height"
+        self._last = None   # (points, ages), to recolor on a mode switch without new data
+
+    def set_mode(self, mode):
+        self._mode = mode
+        if self._last is not None:
+            self.update(*self._last)
 
     def set_point_size(self, size):
         self._point_size = size
@@ -80,6 +112,7 @@ class PointCloudView:
         # array is ambiguous"; must check length explicitly.
         if len(points) == 0:
             return
+        self._last = (points, ages)
         # Tensor-based geometry (o3d.t.geometry.PointCloud), not the legacy
         # o3d.geometry.PointCloud + Vector3dVector: measured directly, Vector3dVector
         # construction alone cost 32-75ms at ~60k points (verified against
@@ -88,7 +121,8 @@ class PointCloudView:
         # not a guess. At ~4Hz updates that's the difference between a real GUI-thread
         # stutter several times a second and one that's no longer perceptible.
         pts = o3c.Tensor(np.ascontiguousarray(points, dtype=np.float32))
-        colors = o3c.Tensor(np.ascontiguousarray(age_to_rgb(ages), dtype=np.float32))
+        rgb = age_to_rgb(ages) if self._mode == "age" else height_to_rgb(points)
+        colors = o3c.Tensor(np.ascontiguousarray(rgb, dtype=np.float32))
         pcd = o3d.t.geometry.PointCloud(pts)
         pcd.point.colors = colors
         if self._present:
@@ -97,6 +131,7 @@ class PointCloudView:
         self._present = True
 
     def clear(self):
+        self._last = None
         if self._present:
             self._scene.scene.remove_geometry(self.NAME)
             self._present = False
@@ -398,8 +433,8 @@ class ViewerApp:
         self.grid_view.update_for_bounds(20.0)
 
         self.cloud_view = PointCloudView(self.scene_widget)
-        # Bright cyan vs magenta: both read clearly against the cloud's warm
-        # green/yellow/red age palette, and are unambiguous against each other.
+        # Bright cyan vs magenta: neither appears in the cloud's height or age
+        # palettes, and they are unambiguous against each other.
         self.path_view = TrajectoryView(self.scene_widget, "path", (0.0, 0.85, 1.0),
                                          line_width=5.0)
         self.gt_path_view = TrajectoryView(self.scene_widget, "gt_path", (1.0, 0.1, 0.85),
@@ -446,6 +481,11 @@ class ViewerApp:
         self._point_size.set_limits(1.0, 6.0)
         self._point_size.double_value = 3.0
         self._point_size.set_on_value_changed(self._on_point_size)
+        self._color_combo = gui.Combobox()
+        self._color_combo.add_item("Height")
+        self._color_combo.add_item("Age (old fades to gray)")
+        self._color_combo.selected_index = 0
+        self._color_combo.set_on_selection_changed(self._on_color_mode)
 
         btn_top = _button("Top", self.COLOR_VIEW, tooltip="Orthographic-style top-down view")
         btn_top.set_on_clicked(lambda: self._set_view("top"))
@@ -516,6 +556,8 @@ class ViewerApp:
         panel.add_child(self._follow)
         panel.add_child(self._show_path)
         panel.add_child(self._show_gt)
+        panel.add_child(_txt("Color cloud by", MUTED))
+        panel.add_child(self._color_combo)
         panel.add_child(_txt("Point size", MUTED))
         panel.add_child(self._point_size)
         view_row = gui.Horiz(0.5 * em)
@@ -560,7 +602,7 @@ class ViewerApp:
         # Raw IMU. Values stacked under captions like ERROR NOW: right-aligned
         # 3-axis values can hit the panel edge and wrap mid-number (seen live
         # on the accel row).
-        panel.add_child(_section("IMU - raw /gt_box/cpt7", self.COLOR_IMU, em))
+        panel.add_child(_section("IMU - raw bag topic", self.COLOR_IMU, em))
         panel.add_child(_txt("GYRO - RAD/S", MUTED))
         self._stat_imu_gyro = _txt("--")
         panel.add_child(self._stat_imu_gyro)
@@ -571,13 +613,18 @@ class ViewerApp:
 
         # Legend: words carry the exact scene colors (font has no swatch glyphs).
         panel.add_child(_section("Legend", FAINT, em))
-        age_row = gui.Horiz(0.4 * em)
-        age_row.add_child(_txt("cloud age:", MUTED))
-        age_row.add_stretch()
-        age_row.add_child(_txt("fresh", (0.0, 0.8, 0.2)))
-        age_row.add_child(_txt("aging", (1.0, 0.8, 0.0)))
-        age_row.add_child(_txt("40s+ drift risk", (1.0, 0.0, 0.0)))
-        panel.add_child(age_row)
+        cloud_row = gui.Horiz(0.4 * em)
+        self._legend_caption = _txt("", MUTED)
+        cloud_row.add_child(self._legend_caption)
+        cloud_row.add_stretch()
+        self._legend_lo = _txt("", MUTED)
+        self._legend_mid = _txt("", MUTED)
+        self._legend_hi = _txt("", MUTED)
+        cloud_row.add_child(self._legend_lo)
+        cloud_row.add_child(self._legend_mid)
+        cloud_row.add_child(self._legend_hi)
+        panel.add_child(cloud_row)
+        self._update_cloud_legend("height")
         path_row = gui.Horiz(0.4 * em)
         path_row.add_child(_txt("paths:", MUTED))
         path_row.add_stretch()
@@ -778,6 +825,26 @@ class ViewerApp:
 
     def _on_point_size(self, value):
         self.cloud_view.set_point_size(value)
+
+    def _on_color_mode(self, text, index):
+        mode = "age" if index == 1 else "height"
+        self.cloud_view.set_mode(mode)
+        self._update_cloud_legend(mode)
+
+    def _update_cloud_legend(self, mode):
+        if mode == "age":
+            mid = tuple(float(c) for c in (AGE_FRESH_RGB + AGE_OLD_RGB) / 2)
+            entries = [("cloud age:", None), ("fresh", tuple(map(float, AGE_FRESH_RGB))),
+                       ("aging", mid), (f"{AGE_MAX_S:.0f}s+", (0.55, 0.55, 0.58))]
+        else:
+            entries = [("cloud height:", None), ("low", tuple(map(float, HEIGHT_STOPS[0]))),
+                       ("mid", tuple(map(float, HEIGHT_STOPS[1]))),
+                       ("high", tuple(map(float, HEIGHT_STOPS[3])))]
+        labels = [self._legend_caption, self._legend_lo, self._legend_mid, self._legend_hi]
+        for label, (text, color) in zip(labels, entries):
+            label.text = text
+            if color is not None:
+                label.text_color = gui.Color(*color)
 
     def _on_toggle_path(self, checked):
         self.path_view.set_visible(checked)
